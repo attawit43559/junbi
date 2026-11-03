@@ -3011,6 +3011,7 @@ function errCopy(code){
   if(/^missing_/.test(code||"")) return "ยังไม่ได้เชื่อม AI เลยอ่านใบจองไม่ได้ เชื่อม AI ฟรีก่อน หรือกรอกเองได้เลย";
   if(code === "bad_ai_key") return "คีย์ AI ใช้ไม่ได้ ลองเชื่อม AI ใหม่ หรือกรอกเองได้เลย";
   if(code === "ai_timeout") return "AI อ่านนานเกินไป ลองแนบทีละไฟล์ หรือกรอกเองได้เลย";
+  if(code === "ai_busy") return "AI ของ Google ไม่ว่างตอนนี้ (มีคนใช้เยอะ) ลองใหม่อีกสักครู่ หรือกรอกเองได้เลย";
   if(code === "rate_limited") return "AI ฟรีใช้ครบโควตาชั่วคราว ลองใหม่อีกสักครู่ หรือกรอกเองได้เลย";
   if(/^ai_error/.test(code||"")) return "ตัวอ่านใบจองตอบกลับผิดพลาด ลองใหม่อีกครั้ง หรือกรอกเอง";
   return ({
@@ -3807,7 +3808,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-2026-11-03-l";
+const BUILD = "junbi-2026-11-03-m";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {

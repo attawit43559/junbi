@@ -1580,6 +1580,25 @@ async function pushDirty() {
 /* ---------- Gemini with the user's own key ---------- */
 const MODELS = ['gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-2.5-flash'];
 const wait = ms => new Promise(r => setTimeout(r, ms));
+/* the models this key may use, asked from Google once a day: names change over time (3.5, 3.8 … lite, preview) */
+async function modelsFor(key) {
+  let cached = null; try { cached = JSON.parse(LS.get('junbi-ai-models')); } catch (_) {}
+  if (cached && cached.key === key.slice(-6) && Date.now() - cached.at < 864e5 && cached.list.length) return cached.list;
+  const way = /^AIza/.test(key) ? 'header' : (LS.get('junbi-ai-way') || 'header');
+  const headers = way === 'header' ? { 'x-goog-api-key': key } : way === 'bearer' ? { Authorization: 'Bearer ' + key } : {};
+  try {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000' + (way === 'query' ? '&key=' + encodeURIComponent(key) : ''), { headers, signal: timed(15000) });
+    if (!res.ok) return [];
+    const j = await res.json();
+    const ver = n => Number((n.match(/gemini-(\d+(?:\.\d+)?)/) || [0, 0])[1]);
+    const list = (j.models || []).filter(m => (m.supportedGenerationMethods || []).indexOf('generateContent') >= 0)
+      .map(m => String(m.name || '').replace(/^models\//, ''))
+      .filter(n => /^gemini-[\d.]+-flash/.test(n) && !/image|tts|audio|live|embed|native|computer|exp/.test(n))
+      .sort((a, b) => (/preview/.test(a) - /preview/.test(b)) || (/lite/.test(a) - /lite/.test(b)) || ver(b) - ver(a) || a.length - b.length);
+    LS.set('junbi-ai-models', JSON.stringify({ key: key.slice(-6), at: Date.now(), list }));
+    return list;
+  } catch (_) { return []; }
+}
 async function gemini(model, parts, opts, key) {
   const gen = Object.assign({ thinkingConfig: { thinkingLevel: opts.thinking || 'low' } }, opts.text ? {} : { responseMimeType: 'application/json' }, opts.maxTokens ? { maxOutputTokens: opts.maxTokens } : {}, opts.temperature != null ? { temperature: opts.temperature } : {});
   if (/^gemini-2/.test(model)) delete gen.thinkingConfig;
@@ -1612,22 +1631,28 @@ async function callGemini_(props, prompt, files, opts) {
   const key = props.getProperty('GEMINI_API_KEY');
   if (!key) throw fail('missing_GEMINI_API_KEY');
   const chosen = props.getProperty('GEMINI_MODEL');
-  const models = [...new Set([].concat(chosen ? [chosen] : [], opts.models || [], opts.fallback || [], MODELS))];
+  const offered = await modelsFor(key);
+  const wanted = [].concat(chosen ? [chosen] : [], opts.models || [], opts.fallback || [], MODELS);
+  // models Google lists for this key first (in our order of preference), then the rest of what it offers
+  const models = offered.length ? [...new Set(wanted.filter(m => offered.indexOf(m) >= 0).concat(offered))].slice(0, 5) : [...new Set(wanted)];
   const parts = [{ text: prompt }].concat(...(files || []).map((f, i) => [{ text: '[File ' + i + ']' }, { inline_data: { mime_type: f.mime, data: f.data } }]));
-  let last;
+  let last, busy = null;
   for (const model of models) {
-    for (let n = 0; n < 2; n++) {
+    for (let n = 0; n < 3; n++) {
       try { return await gemini(model, parts, opts, key); }
       catch (e) {
         last = e;
         if (e.code === 'bad_ai_key' || e.code === 'offline' || e.code === 'ai_timeout') throw e;
         if (/_(404|400)\b/.test(e.code)) break;              // this model is not offered: try the next one
-        if (/_(503|500)\b/.test(e.code) || e.code === 'rate_limited' || e.code === 'ai_empty') { say('ai-retry', { model, code: e.code }); await wait(2500 + n * 2500); continue; }
+        if (/_(503|500)\b/.test(e.code)) busy = e;
+        if (n < 2 && (/_(503|500)\b/.test(e.code) || e.code === 'ai_empty')) { say('ai-retry', { model, code: e.code }); await wait(n ? 9000 : 4000); continue; }
         break;
       }
     }
     if (last && last.code === 'rate_limited') break;      // the free quota is used up for now; another model will not help
   }
+  // say what really happened: Google busy beats "model not found" from a later fallback
+  if (last && last.code !== 'rate_limited' && busy) throw fail('ai_busy');
   throw last || fail('ai_error');
 }
 async function callGeminiMany_(props, prompts, extra) {
