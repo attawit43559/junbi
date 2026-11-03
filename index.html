@@ -3059,10 +3059,20 @@ async function readAll(){
     // keep the booking files in Drive while the AI reads them
     const uploads = prepared.map((p, i) => api("uploadFile", {name:files[i].name || "booking", mime:p.mime, data:p.data}).then(r => r.id).catch(() => null));
     setStep("กำลังอ่านใบจอง…");
+    // show each step with the seconds since it started, so a stuck step can be seen
+    const t0 = Date.now(), secs = () => Math.round((Date.now() - t0) / 1000);
+    let last = "กำลังเตรียมส่งให้ AI";
+    const onStep = ev => { const d = ev.detail || {};
+      last = d.step === "ai-send" ? `ส่งให้ AI (${d.model}${d.way && d.way !== "header" ? " · " + d.way : ""} · ${d.kb} KB)` : d.step === "ai-answer" ? `AI ตอบกลับ ${d.status}` : d.step === "ai-retry" ? `AI ไม่ว่าง ลองใหม่ (${d.code})` : d.step === "drive-upload" && !/AI/.test(last) ? "เก็บไฟล์ใน Drive" : last;
+      setStep(last + " · " + secs() + " วิ"); };
+    window.addEventListener("junbi-progress", onStep);
+    const tick = setInterval(() => setStep(last + " · " + secs() + " วิ"), 1000);
+    try {
     const t = S.trip;
     const res = await api("readBooking", {kind:u.kind, trip:{name:t.name, destination:t.destination, startDate:t.startDate, days:t.days},
       files:prepared, text:pasted}, signal);
-    const r = buildReview(u.kind, res);
+    var res2 = res; } finally { clearInterval(tick); window.removeEventListener("junbi-progress", onStep); }
+    const r = buildReview(u.kind, res2);
     if(!r.flights.length && !r.stays.length) throw {code:"nothing"};
     r.fileName = files.length ? files.map(f => f.name).join(", ") : "ข้อความที่วาง";
     setStep("กำลังเก็บใบจอง…");
@@ -3797,7 +3807,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-2026-11-03-k";
+const BUILD = "junbi-2026-11-03-l";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {

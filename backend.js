@@ -1406,6 +1406,7 @@ const CLIENT_ID = '593453832447-qhu0itir9firda9csuivrknitqs5es2r.apps.googleuser
 const SCOPES = 'openid email profile https://www.googleapis.com/auth/drive.file';
 const AUTH_KEY = 'junbi-auth', FILES_KEY = 'junbi-files', ROOT_KEY = 'junbi-root';
 const DRIVE = 'https://www.googleapis.com/drive/v3', UPLOAD = 'https://www.googleapis.com/upload/drive/v3';
+const say = (step, extra) => { try { window.dispatchEvent(new CustomEvent('junbi-progress', { detail: Object.assign({ step, at: Date.now() }, extra || {}) })); } catch (_) {} };
 const timed = ms => (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(ms) : undefined;
 const clone = o => o == null ? o : JSON.parse(JSON.stringify(o));
 const fail = code => { const e = new Error(code); e.code = code; return e; };
@@ -1591,8 +1592,10 @@ async function gemini(model, parts, opts, key) {
   for (const way of ways) {
     const headers = { 'Content-Type': 'application/json' };
     if (way === 'header') headers['x-goog-api-key'] = key; else if (way === 'bearer') headers.Authorization = 'Bearer ' + key;
+    say('ai-send', { model, way, kb: Math.round(JSON.stringify(body).length / 1024) });
     try { res = await fetch(url + (way === 'query' ? '?key=' + encodeURIComponent(key) : ''), { method: 'POST', headers, body: JSON.stringify(body), signal: timed(opts.timeout || 150000) }); }
     catch (e) { throw fail(e && e.name === 'TimeoutError' ? 'ai_timeout' : 'offline'); }
+    say('ai-answer', { model, way, status: res.status });
     if (res.status !== 401) { if (ways.length > 1) LS.set('junbi-ai-way', way); break; }
   }
   if (res.status === 429) throw fail('rate_limited');
@@ -1619,7 +1622,7 @@ async function callGemini_(props, prompt, files, opts) {
         last = e;
         if (e.code === 'bad_ai_key' || e.code === 'offline' || e.code === 'ai_timeout') throw e;
         if (/_(404|400)\b/.test(e.code)) break;              // this model is not offered: try the next one
-        if (/_(503|500)\b/.test(e.code) || e.code === 'rate_limited' || e.code === 'ai_empty') { await wait(2500 + n * 2500); continue; }
+        if (/_(503|500)\b/.test(e.code) || e.code === 'rate_limited' || e.code === 'ai_empty') { say('ai-retry', { model, code: e.code }); await wait(2500 + n * 2500); continue; }
         break;
       }
     }
@@ -1723,6 +1726,7 @@ ACTIONS.uploadFile = async req => {
   const bin = atob(String(req.data || '')), bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   const m = multipart({ name: String(req.name || 'booking').slice(0, 120), parents: [await root()], appProperties: { junbi: 'file' } }, new Blob([bytes]), req.mime || 'application/octet-stream');
+  say('drive-upload', { kb: Math.round(bytes.length / 1024) });
   const r = await drive('/files?uploadType=multipart&fields=id', { method: 'POST', headers: m.headers, body: m.body }, UPLOAD);
   return { id: r.id, url: 'https://drive.google.com/file/d/' + r.id + '/view' };
 };
