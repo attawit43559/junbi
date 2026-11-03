@@ -168,6 +168,7 @@ p{margin:0}
 .login .tagline{margin:-6px 0 6px;color:var(--muted);max-width:300px;line-height:1.5}
 .g-btn{display:inline-flex;align-items:center;gap:12px;height:52px;padding:0 24px;border-radius:999px;border:0;background:#fff;color:#1f1f1f;font:inherit;font-weight:500;font-size:16px;box-shadow:0 0 0 1px #dadce0,0 2px 6px rgba(0,0,0,.08);cursor:pointer}
 .g-btn:disabled{opacity:.6}
+.drive-need{display:flex;flex-direction:column;gap:4px;max-width:330px;text-align:left;padding:12px 14px;border-radius:16px;background:#FFF4E5;color:#6B4200;font-size:14px;line-height:1.5}
 .login .promise{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:8px;text-align:left;max-width:320px;font-size:14px;color:var(--muted)}
 .login .promise li{display:flex;gap:8px;align-items:flex-start}.login .promise svg{flex:none;margin-top:3px;color:#0B4A8C}
 .ai-card{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px 16px;border-radius:18px;border:0;background:var(--surface);color:inherit;font:inherit;box-shadow:inset 0 0 0 1px var(--line)}
@@ -926,6 +927,7 @@ async function api(action, body={}, signal){
     const code = (e && e.code) || "server_error";
     if(code === "auth_required" && action !== "login") needLogin();
     if(code === "reauth") needReconnect();
+    if(code === "drive_scope"){ JunbiBackend.forgetDrive(); S.needDrive = true; setSession(null); go("login"); }
     if(code === "missing_GEMINI_API_KEY" || code === "bad_ai_key") aiNeeded(code);
     throw {code};
   }
@@ -966,9 +968,10 @@ const store = {
   async fetchTrip(id){ const r = await api("getTrip", {id}); return r && r.trip; },
   async createTrip(data){
     let id = genId(); while(C.trips[id]) id = genId();
-    // a new trip is saved on the server before anything else, so an invite link always points at a real trip
-    const saved = await api("saveTrip", {trip:{id, ...data}, create:true});
-    C.trips[id] = saved; C.items[id] = {}; C.myTrips.unshift(id); emit();
+    // the trip opens straight away; its file in Drive is made in the background (saved changes wait in order)
+    C.trips[id] = {id, ...data, ownerId:S.me, memberIds:[S.me], members:{[S.me]:S.myName}};
+    C.items[id] = {}; C.myTrips.unshift(id); emit();
+    queue("saveTrip", {trip:{id, ...data}, create:true});
     return id;
   },
   async updateTrip(id, patch){ C.trips[id] = deepMerge(C.trips[id], patch); emit(); queue("saveTrip", {trip:{id, ...patch}}); },
@@ -1052,7 +1055,7 @@ async function refreshTrip(id){
     C.items[id] = next; C.revisions[id]=r.revision; emit();
   } catch(_) { S.tripLoading = false; emit(); }
 }
-function fail(e){ const c = e && e.code; if(c === "missing_GEMINI_API_KEY" || c === "bad_ai_key") return; toast(c === "offline" ? "ไม่มีอินเทอร์เน็ต ลองใหม่อีกครั้ง" : c === "reauth" ? "ต้องเชื่อม Google Drive อีกครั้งก่อน" : c === "rate_limited" ? "AI ฟรีใช้ครบโควตาชั่วคราว ลองใหม่อีกสักครู่" : "เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง"); }
+function fail(e){ const c = e && e.code; if(c === "missing_GEMINI_API_KEY" || c === "bad_ai_key") return; if(c === "drive_scope") return; toast(c === "offline" ? "ไม่มีอินเทอร์เน็ต ลองใหม่อีกครั้ง" : c === "drive_denied" ? "Google Drive ไม่อนุญาตให้บันทึก ลองออกจากระบบแล้วเข้าใหม่" : c === "drive_busy" ? "Google Drive ไม่ว่าง ลองใหม่อีกสักครู่" : c === "reauth" ? "ต้องเชื่อม Google Drive อีกครั้งก่อน" : c === "rate_limited" ? "AI ฟรีใช้ครบโควตาชั่วคราว ลองใหม่อีกสักครู่" : "เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง"); }
 
 /* files go to the AI and to Drive as base64; photos are shrunk first */
 const fileToB64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(blob); });
@@ -2112,6 +2115,7 @@ function vLogin(){
     <button class="g-btn" data-act="google-login" ${S.loggingIn ? "disabled" : ""}><svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.2l7.8 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 7.1-10 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.8l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.8 6.1C6.6 42.6 14.6 48 24 48z"/></svg>${S.loggingIn ? "กำลังเข้าสู่ระบบ…" : "เข้าสู่ระบบด้วย Google"}</button>
     ${/\bLine\/|FBAN|FBAV|Instagram|MicroMessenger/i.test(navigator.userAgent) ? `<p class="note" style="max-width:300px">Google ไม่ให้เข้าสู่ระบบในเบราว์เซอร์ของแอปแชต กดเมนู ⋯ แล้วเลือก "เปิดใน Safari" หรือ "เปิดในเบราว์เซอร์" ก่อนนะ</p>` : ""}
     ${S.loginErr ? `<p class="err" role="alert">${esc(S.loginErr)}</p>` : ""}
+    ${S.needDrive ? `<div class="drive-need" role="alert"><b>ยังไม่ได้อนุญาต Google Drive</b><span>Junbi เก็บทริปใน Drive ของคุณ ตอนเข้าสู่ระบบอีกครั้ง ให้ติ๊กช่อง <b>"ดู แก้ไข สร้าง และลบไฟล์ Google ไดรฟ์ที่คุณใช้กับแอปนี้"</b> (หรือกด <b>เลือกทั้งหมด</b>) แล้วกดดำเนินการต่อ</span></div>` : ""}
     <ul class="promise"><li>${ic("check",16)}ฟรี ไม่มีค่าใช้จ่าย</li><li>${ic("check",16)}ทริปและไฟล์ตั๋วเก็บในโฟลเดอร์ Junbi ใน Drive ของคุณ แอปเห็นเฉพาะไฟล์ที่แอปสร้าง</li><li>${ic("check",16)}ใช้ AI ฟรีของ Google ด้วยบัญชีคุณเอง (เปิดทีหลังได้)</li></ul>
     <a class="muted small" href="privacy.html" target="_blank" rel="noopener">นโยบายความเป็นส่วนตัว</a>
   </main>`;
@@ -3495,7 +3499,7 @@ document.addEventListener("submit", async e => {
     const n = S.newTrip;
     if(!n.name.trim()){ toast("ใส่ชื่อทริปก่อนนะ"); return; }
     if(S.creating) return;
-    S.creating = true; toast("กำลังสร้างทริป…");
+    S.creating = true;
     try{
       const rough = roughDates(n), span = tripSpan(rough, []);
       const id = await store.createTrip({name:n.name.trim(), destination:s_(n.destination), ...rough, ...span, autoDates:true,
@@ -3689,7 +3693,7 @@ document.addEventListener("click", async e => {
       store.updateItem(S.trip.id, it.id, {fileIds:keep, fileId:""}); toast("เอาใบจองออกแล้ว"); break;
     }
     case "logout": logout(); break;
-    case "google-login": S.loggingIn = true; S.loginErr = ""; render(); JunbiBackend.signIn(); break;
+    case "google-login": { const again = S.needDrive; S.loggingIn = true; S.loginErr = ""; render(); JunbiBackend.signIn(again ? "consent" : undefined); break; }
     case "reconnect": JunbiBackend.signIn(""); break;
     case "ai-setup": S.sheet = {kind:"ai-setup"}; render(); break;
     case "ai-change": if(S.sheet && S.sheet.kind === "ai-setup"){ S.sheet.editing = true; render(); } break;
@@ -3779,7 +3783,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-2026-11-03-b";
+const BUILD = "junbi-2026-11-03-d";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
@@ -3799,7 +3803,7 @@ async function checkUpdate(){
   if(back){ C.lastUser = back.uid; persist(); }
   setSession(u ? {token:"drive", user:u} : null);
   if(err && !u) S.loginErr = err === "access_denied" ? "ยังไม่ได้อนุญาตให้ Junbi ใช้ Google Drive ลองใหม่อีกครั้ง" : "เข้าสู่ระบบไม่สำเร็จ ลองใหม่อีกครั้ง";
-  if(err === "drive_scope_missing") S.loginErr = "ต้องติ๊กอนุญาตให้ Junbi เก็บไฟล์ใน Google Drive ด้วย ลองเข้าสู่ระบบอีกครั้ง";
+  if(err === "drive_scope_missing"){ S.needDrive = true; S.loginErr = ""; }
   // an hour-old Drive key: get a new one quietly from Google (once a minute at most)
   const quiet = () => { let last = 0; try { last = +sessionStorage.getItem("junbi-refresh") || 0; } catch(_){} return Date.now() - last > 60000; };
   if(u && !JunbiBackend.tokenOk() && navigator.onLine){

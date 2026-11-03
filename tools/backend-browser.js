@@ -76,7 +76,8 @@ async function finishSignIn() {
     return null;
   }
   if (want && p.get('state') !== want) return null;
-  if (!/drive\.file/.test(p.get('scope') || '')) { try { sessionStorage.setItem('junbi-auth-error', 'drive_scope_missing'); } catch (_) {} }
+  // Google lets people untick Drive on its page: without it nothing can be saved, so ask again
+  if (!/drive\.file/.test(p.get('scope') || '')) { try { sessionStorage.setItem('junbi-auth-error', 'drive_scope_missing'); } catch (_) {} return null; }
   const token = p.get('access_token'), expires = Date.now() + (Number(p.get('expires_in')) || 3600) * 1000;
   const info = await (await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + token } })).json();
   const user = { uid: 'g-' + info.sub, name: String(info.given_name || info.name || info.email || '').slice(0, 40), email: info.email || '', picture: info.picture || '' };
@@ -99,7 +100,7 @@ async function drive(path, opt = {}, base = DRIVE) {
   catch (_) { throw fail('offline'); }
   if (res.status === 401) { auth.expires = 0; LS.set(AUTH_KEY, JSON.stringify(auth)); throw fail('reauth'); }
   if (res.status === 404) throw fail('not_found');
-  if (res.status === 403 || res.status === 429) { const t = await res.text(); throw fail(/rate|quota/i.test(t) ? 'drive_busy' : 'drive_denied'); }
+  if (res.status === 403 || res.status === 429) { const t = await res.text(); throw fail(/insufficient|SCOPE/i.test(t) ? 'drive_scope' : /rate|quota/i.test(t) ? 'drive_busy' : 'drive_denied'); }
   if (!res.ok) throw fail('server_error');
   return opt.raw ? res : (res.status === 204 ? null : res.json());
 }
@@ -323,6 +324,9 @@ ACTIONS.getFile = async req => {
   let s = ''; for (let i = 0; i < buf.length; i += 0x8000) s += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
   return { id: fid, name: meta.name, mime: meta.mimeType, data: btoa(s) };
 };
+/* a new trip sent twice (the answer got lost on the way) is simply saved again */
+const saveTripOnce = ACTIONS.saveTrip;
+ACTIONS.saveTrip = req => { const old = find_(TRIPS, String(req.trip && req.trip.id)); if (req.create && old && isMember_(old.obj, req.me)) delete req.create; return saveTripOnce(req); };
 ACTIONS.geocode = async req => { const out = []; for (const x of (Array.isArray(req.q) ? req.q : []).slice(0, 60)) out.push(await geocode_(x).catch(() => null)); return out; };
 ACTIONS.resolveMapLink = req => resolveMapLink_(req);
 ACTIONS.travelOptions = req => travelCompare_(req, !!req.ai);
@@ -368,6 +372,7 @@ window.JunbiBackend = {
   user: () => auth && auth.user ? Object.assign({}, auth.user) : null,
   tokenOk,
   signIn: prompt => goToGoogle(prompt === undefined ? 'select_account' : prompt),
+  forgetDrive() { if (auth) { auth.token = ''; auth.expires = 0; LS.set(AUTH_KEY, JSON.stringify(auth)); } },
   refresh: () => goToGoogle('none'),
   finishSignIn,
   signOut,
