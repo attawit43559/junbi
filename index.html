@@ -163,6 +163,8 @@ p{margin:0}
 .login img.logo{width:96px;height:96px;border-radius:22px;box-shadow:0 6px 20px rgba(29,27,46,.15)}
 .login h1{font-size:28px;margin:0}
 .login .wordmark{width:230px;max-width:70vw;height:auto}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .login .wordmark{filter:invert(1) hue-rotate(180deg) brightness(1.15)}}
+:root[data-theme="dark"] .login .wordmark{filter:invert(1) hue-rotate(180deg) brightness(1.15)}
 .login .tagline{margin:-6px 0 6px;color:var(--muted);max-width:300px;line-height:1.5}
 .g-btn{display:inline-flex;align-items:center;gap:12px;height:52px;padding:0 24px;border-radius:999px;border:0;background:#fff;color:#1f1f1f;font:inherit;font-weight:500;font-size:16px;box-shadow:0 0 0 1px #dadce0,0 2px 6px rgba(0,0,0,.08);cursor:pointer}
 .g-btn:disabled{opacity:.6}
@@ -3777,7 +3779,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-2026-11-03-a";
+const BUILD = "junbi-2026-11-03-b";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
