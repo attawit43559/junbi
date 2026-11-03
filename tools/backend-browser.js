@@ -182,7 +182,7 @@ async function gemini(model, parts, opts, key) {
   if (opts.tools) body.tools = opts.tools;
   // newer AI Studio keys (AQ.…) are "auth keys"; send them the way Google accepts, and remember which way worked
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
-  const ways = /^AQ\./.test(key) ? [LS.get('junbi-ai-way') || 'header', 'header', 'bearer', 'query'].filter((w, i, a) => a.indexOf(w) === i) : ['header'];
+  const ways = !/^AIza/.test(key) ? [LS.get('junbi-ai-way') || 'header', 'header', 'bearer', 'query'].filter((w, i, a) => a.indexOf(w) === i) : ['header'];
   let res;
   for (const way of ways) {
     const headers = { 'Content-Type': 'application/json' };
@@ -389,7 +389,7 @@ window.JunbiBackend = {
   setAiKey: k => LS.set(AI_KEY, k ? String(k).trim() : null),
   async testAiKey(k) {
     const key = String(k || '').trim();
-    if (!/^(AIza[0-9A-Za-z_\-]{30,}|AQ\.[0-9A-Za-z_\-.]{20,})$/.test(key)) throw { code: 'bad_ai_key' };
+    if (!/^[0-9A-Za-z_\-.]{20,}$/.test(key)) throw { code: 'bad_ai_key' };   // Google decides; key looks change over time
     for (const model of MODELS) {
       try { await gemini(model, [{ text: 'Reply only JSON {"ok":true}' }], { thinking: 'low', maxTokens: 512 }, key); return model; }
       catch (e) { if (e.code === 'ai_empty') return model; if (e.code === 'bad_ai_key' || e.code === 'offline' || e.code === 'rate_limited') throw { code: e.code }; }
