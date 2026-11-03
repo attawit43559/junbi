@@ -1583,10 +1583,19 @@ async function gemini(model, parts, opts, key) {
   if (/^gemini-2/.test(model)) delete gen.thinkingConfig;
   const body = { contents: [{ role: 'user', parts }], generationConfig: gen };
   if (opts.tools) body.tools = opts.tools;
+  // newer AI Studio keys (AQ.…) are "auth keys"; send them the way Google accepts, and remember which way worked
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
+  const ways = /^AQ\./.test(key) ? [LS.get('junbi-ai-way') || 'header', 'header', 'bearer', 'query'].filter((w, i, a) => a.indexOf(w) === i) : ['header'];
   let res;
-  try { res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(body) }); }
-  catch (_) { throw fail('offline'); }
+  for (const way of ways) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (way === 'header') headers['x-goog-api-key'] = key; else if (way === 'bearer') headers.Authorization = 'Bearer ' + key;
+    try { res = await fetch(url + (way === 'query' ? '?key=' + encodeURIComponent(key) : ''), { method: 'POST', headers, body: JSON.stringify(body) }); }
+    catch (_) { throw fail('offline'); }
+    if (res.status !== 401) { if (ways.length > 1) LS.set('junbi-ai-way', way); break; }
+  }
   if (res.status === 429) throw fail('rate_limited');
+  if (res.status === 401) throw fail('bad_ai_key');
   if (res.status === 400 || res.status === 403) { const t = await res.text(); if (/API key|API_KEY|permission|PERMISSION/i.test(t) && !/model/i.test(t)) throw fail('bad_ai_key'); throw fail('ai_error_' + res.status + ': ' + t.slice(0, 200)); }
   if (!res.ok) throw fail('ai_error_' + res.status);
   const j = await res.json(), c = j.candidates && j.candidates[0];
@@ -1783,7 +1792,7 @@ window.JunbiBackend = {
   setAiKey: k => LS.set(AI_KEY, k ? String(k).trim() : null),
   async testAiKey(k) {
     const key = String(k || '').trim();
-    if (!/^AIza[0-9A-Za-z_\-]{30,}$/.test(key)) throw { code: 'bad_ai_key' };
+    if (!/^(AIza[0-9A-Za-z_\-]{30,}|AQ\.[0-9A-Za-z_\-.]{20,})$/.test(key)) throw { code: 'bad_ai_key' };
     for (const model of MODELS) {
       try { await gemini(model, [{ text: 'Reply only JSON {"ok":true}' }], { thinking: 'low', maxTokens: 512 }, key); return model; }
       catch (e) { if (e.code === 'ai_empty') return model; if (e.code === 'bad_ai_key' || e.code === 'offline' || e.code === 'rate_limited') throw { code: e.code }; }

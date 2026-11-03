@@ -2146,7 +2146,7 @@ function vAiSetup(s){
       <p class="muted small">ใช้ Gemini ของ Google ฟรีด้วยบัญชีของคุณเอง คีย์เก็บในเครื่องนี้เท่านั้น</p>
       <ol class="ai-steps">
         <li><span class="n">1</span><span class="grow">เปิดหน้า Google AI Studio แล้วกด <b>Create API key</b></span><a class="pill-btn" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" data-act="ai-get-key">เปิด${ic("ext",14)}</a></li>
-        <li><span class="n">2</span><span class="grow">กด <b>คัดลอก</b> ที่คีย์ (ขึ้นต้นด้วย AIza…) แล้วกลับมาที่แอปนี้</span></li>
+        <li><span class="n">2</span><span class="grow">กด <b>คัดลอก</b> ที่คีย์ (ขึ้นต้นด้วย AQ. หรือ AIza) แล้วกลับมาที่แอปนี้</span></li>
         <li><span class="n">3</span><span class="grow">กดวางคีย์</span><button class="pill-btn primary" data-act="ai-paste" ${s.busy ? "disabled" : ""}>วางคีย์</button></li>
       </ol>
       <form class="ai-key-row" data-form="ai-key"><label class="sr" for="ai-key">คีย์ Gemini</label><input id="ai-key" name="key" placeholder="หรือวางคีย์ตรงนี้" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(s.key || "")}" data-bind="sheet:key"><button type="submit" ${s.busy ? "disabled" : ""}>${s.busy ? "กำลังลอง…" : "ใช้คีย์นี้"}</button></form>
@@ -3164,7 +3164,7 @@ document.addEventListener("input", e => {
   if(e.target.dataset.suggest !== undefined && e.isTrusted) suggestSoon(e.target);
 });
 /* place suggestions while typing: Google Places when a key is set, else OpenStreetMap (Photon), which is free and keyless */
-const GMAPS_KEY = "AIzaSyDhRn__pYviScNn4k48nONBlhwYMwAlweQ";   // browser key: restricted to this website and approved Maps services
+const GMAPS_KEY = "";   // no paid Google Maps lookups in Junbi (they would bill the developer); places come from the shared link instead
 /* each phone asks Google at most this many times a day; after that (or if Google fails) suggestions come from OpenStreetMap */
 const GMAPS_DAILY = 150;
 function gmapsAllowance(){
@@ -3471,7 +3471,7 @@ document.addEventListener("pointercancel", endSwipe);
 document.addEventListener("click", e => { if(SW.suppress && e.target.closest(".trow-slide")){ e.preventDefault(); e.stopImmediatePropagation(); SW.suppress = false; } }, true);
 document.addEventListener("keydown", e => { if(e.key === "Escape" && S.sheet){ S.sheet = null; render(); } });
 document.addEventListener("submit", async e => {
-  if(e.target && e.target.dataset && e.target.dataset.form === "ai-key"){ e.preventDefault(); const k = (String(S.sheet && S.sheet.key || "").match(/AIza[0-9A-Za-z_\-]{30,}/) || [""])[0]; if(!k){ S.sheet.err = "คีย์ต้องขึ้นต้นด้วย AIza ลองคัดลอกใหม่"; render(); return; } aiTry(k); return; }
+  if(e.target && e.target.dataset && e.target.dataset.form === "ai-key"){ e.preventDefault(); const k = (String(S.sheet && S.sheet.key || "").match(/(?:AIza[0-9A-Za-z_\-]{30,}|AQ\.[0-9A-Za-z_\-.]{20,})/) || [""])[0]; if(!k){ S.sheet.err = "ยังไม่ใช่คีย์ Gemini (ขึ้นต้นด้วย AQ. หรือ AIza) ลองคัดลอกใหม่"; render(); return; } aiTry(k); return; }
   if(e.target.dataset.form==='travel-leg'){e.preventDefault();await saveTravelLeg();return;}
   if(e.target.dataset.form==='sos'){e.preventDefault();await sosSave();return;}
   const f = e.target.dataset && e.target.dataset.form; if(!f) return;
@@ -3701,7 +3701,7 @@ document.addEventListener("click", async e => {
     case "ai-get-key": break;
     case "ai-paste": {
       let txt = ""; try { txt = await navigator.clipboard.readText(); } catch(_){}
-      const k = (String(txt).match(/AIza[0-9A-Za-z_\-]{30,}/) || [""])[0];
+      const k = (String(txt).match(/(?:AIza[0-9A-Za-z_\-]{30,}|AQ\.[0-9A-Za-z_\-.]{20,})/) || [""])[0];
       if(!k){ if(S.sheet){ S.sheet.err = "ยังไม่เจอคีย์ในคลิปบอร์ด คัดลอกคีย์จาก Google AI Studio แล้วกดอีกครั้ง หรือวางในช่องด้านล่าง"; render(); } break; }
       aiTry(k); break; }
     case "trip-menu": S.sheet = {kind:"trip-menu", id:el.dataset.id, confirm:false}; render(); break;
@@ -3736,7 +3736,7 @@ async function aiTry(k){
   s.busy = true; s.err = ""; s.key = k; render();
   try { await JunbiBackend.testAiKey(k); JunbiBackend.setAiKey(k); s.editing = false; s.why = ""; s.key = ""; toast("เชื่อม AI แล้ว");
     if(s.then){ const f = s.then; S.sheet = null; render(); f(); return; } }
-  catch(e){ s.err = e && e.code === "bad_ai_key" ? "คีย์นี้ใช้ไม่ได้ ตรวจว่าคัดลอกครบ (ขึ้นต้นด้วย AIza)" : e && e.code === "offline" ? "ไม่มีอินเทอร์เน็ต ลองใหม่อีกครั้ง" : e && e.code === "rate_limited" ? "คีย์ใช้ได้ แต่โควตาฟรีเต็มชั่วคราว ลองใหม่อีกสักครู่" : "ตอนนี้เชื่อม AI ไม่ได้ ลองใหม่อีกครั้ง"; }
+  catch(e){ s.err = e && e.code === "bad_ai_key" ? "คีย์นี้ใช้ไม่ได้ ตรวจว่าคัดลอกครบทั้งคีย์" : e && e.code === "offline" ? "ไม่มีอินเทอร์เน็ต ลองใหม่อีกครั้ง" : e && e.code === "rate_limited" ? "คีย์ใช้ได้ แต่โควตาฟรีเต็มชั่วคราว ลองใหม่อีกสักครู่" : "ตอนนี้เชื่อม AI ไม่ได้ ลองใหม่อีกครั้ง"; }
   finally { s.busy = false; render(); }
 }
 function aiNeeded(code){
@@ -3783,7 +3783,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-2026-11-03-e";
+const BUILD = "junbi-2026-11-03-f";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
