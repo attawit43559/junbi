@@ -2821,7 +2821,13 @@ async function fillFromLink(url){
     s.placeId = await gmapsFindId(r.name, r.lat, r.lon);
   } catch(e){
     if(S.sheet !== s) return;
-    s.linkErr = e && e.code === "offline" ? "ไม่มีอินเทอร์เน็ต ลองใหม่อีกครั้ง" : "อ่านลิงก์นี้ไม่ได้ ลองพิมพ์ชื่อเองแทนได้เลย";
+    const c = (e && e.code) || "";
+    s.linkErr = c === "offline" ? "ไม่มีอินเทอร์เน็ต ลองใหม่อีกครั้ง"
+      : c === "short_link_needs_ai" || c === "missing_GEMINI_API_KEY" ? "ลิงก์สั้นจากแอป Google Maps ต้องใช้ AI ช่วยอ่าน เชื่อม AI ในหน้าบัญชีก่อนนะ"
+      : c === "bad_ai_key" ? "คีย์ AI ใช้ไม่ได้ ลองเชื่อม AI ใหม่ในหน้าบัญชี"
+      : /^rate_limited/.test(c) ? "AI ฟรีของวันนี้ใช้ครบแล้ว เลยอ่านลิงก์สั้นไม่ได้ ลองใหม่หลัง 15:00 น."
+      : c === "ai_busy" || c === "ai_timeout" ? "AI ไม่ว่างตอนนี้ ลองวางลิงก์ใหม่อีกครั้ง"
+      : "AI เปิดลิงก์นี้ไม่ได้ (" + (c || "error").slice(0, 40) + ")";
   }
   s.linking = false; render();
 }
@@ -3818,7 +3824,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-2026-11-03-o";
+const BUILD = "junbi-2026-11-03-p";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {

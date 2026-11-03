@@ -309,7 +309,7 @@ async function resolveMapLink_(req) {
       if (isFinite(Number(out.lat)) && out.lat !== null && isFinite(Number(out.lon)) && out.lon !== null) { lat = Number(out.lat); lon = Number(out.lon); }
       if (['ที่เที่ยว', 'ร้านอาหาร', 'ช้อปปิ้ง'].indexOf(out.kind) >= 0) kind = out.kind;
       return { name: name.slice(0, 80), address: address.slice(0, 500), originalName: name.slice(0, 500), lat, lon, kind };
-    } catch (e) { throw e.code === 'unreadable_link' || e.code === 'rate_limited' || e.code === 'offline' ? e : fail('unreadable_link'); }
+    } catch (e) { throw /^(unreadable_link|rate_limited|rate_limited_day|offline|ai_busy|ai_timeout|bad_ai_key|missing_GEMINI_API_KEY)$/.test(e.code) ? e : fail('unreadable_link'); }
   }
   const originalName = name;
   const parts = mapNameParts_(name); name = parts.name; address = parts.address;
