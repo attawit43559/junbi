@@ -284,6 +284,54 @@ async function geocode_(text) {
   } catch (_) { return null; }
   geoCache[text] = out; LS.set(GEO_KEY, JSON.stringify(geoCache)); return out;
 }
+/* where exactly is a place Google Maps named? Google's share links carry the name and address but no position.
+   Japan: the government address search (GSI) finds the building from "ward + town + chome-ban-go";
+   elsewhere OpenStreetMap by address, then by name near the town. All free, no key, nothing counted against anyone. */
+async function jsonGet_(url, headers) {
+  const res = await fetch(url, { headers: headers || {}, signal: AbortSignal.timeout ? AbortSignal.timeout(12000) : undefined });
+  if (!res.ok) throw fail('geo_' + res.status);
+  return res.json();
+}
+async function osm_(params, lang) {
+  const gap = 1100 - (Date.now() - geoLast); if (gap > 0) await wait(gap);
+  geoLast = Date.now();
+  return jsonGet_('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&accept-language=' + (lang || 'en') + '&' + params);
+}
+const near_ = (a, b, km) => a && b && Math.hypot((a.lat - b.lat) * 111, (a.lon - b.lon) * 111 * Math.cos(a.lat * Math.PI / 180)) <= km;
+async function placeGeo_(name, address) {
+  const ck = 'p:' + name + '|' + address;
+  if (ck in geoCache) return geoCache[ck];
+  let out = null;
+  try {
+    const jp = /\bJapan\b|日本/.test(address);
+    const m = address.match(/(\d+)\s*Chome-(\d+)(?:-(\d+))?\s+([A-Za-z'\-]+),\s*([A-Za-z'\- ]+?)(?:\s+(?:City|Ward))?,/i)
+      || address.match(/(?:^|[\s,])()(\d+)-(\d+)\s+([A-Za-z'\-]+),\s*([A-Za-z'\- ]+?)(?:\s+(?:City|Ward))?,/i);
+    if (jp && m) {
+      const [, chome, ban, go, town, ward] = m;
+      const r = await osm_('q=' + q(town + ', ' + ward + ', Japan'), 'ja');
+      if (r && r[0]) {
+        const a = r[0].address || {}, area = { lat: Number(r[0].lat), lon: Number(r[0].lon) };
+        const wardJa = a.city_district || a.city || a.town || '';
+        const townJa = String(r[0].name || a.quarter || a.neighbourhood || a.suburb || '').replace(/[一二三四五六七八九十〇]+丁目$/, '');
+        if (townJa && /[぀-ヿ一-鿿]/.test(townJa)) {
+          const num = (chome ? chome + '-' : '') + ban + (go ? '-' + go : '');
+          const g = await jsonGet_('https://msearch.gsi.go.jp/address-search/AddressSearch?q=' + q(wardJa + townJa + num));
+          const hit = (g || []).find(h => String(h.properties && h.properties.title || '').indexOf(townJa) >= 0);
+          if (hit) { const p = { lat: hit.geometry.coordinates[1], lon: hit.geometry.coordinates[0] }; if (near_(p, area, 5)) out = p; }
+        }
+        if (!out) {   // by name near the town, else the town itself
+          const p = await jsonGet_('https://photon.komoot.io/api/?limit=1&lat=' + area.lat + '&lon=' + area.lon + '&q=' + q(name)).catch(() => null);
+          const f = p && p.features && p.features[0];
+          const c = f && { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] };
+          out = c && near_(c, area, 1.5) ? c : area;
+        }
+      }
+    }
+    if (!out && address) { const r = await osm_('q=' + q(address.replace(/^[^,]*\b(?:\d+F|floor|ชั้น)\b[^,]*,\s*/i, ''))); if (r && r[0]) out = { lat: Number(r[0].lat), lon: Number(r[0].lon) }; }
+    if (!out && name) { const r = await osm_('q=' + q(name + (address ? ', ' + address.split(',').slice(-3).join(',') : ''))); if (r && r[0]) out = { lat: Number(r[0].lat), lon: Number(r[0].lon) }; }
+  } catch (_) { return out; }
+  geoCache[ck] = out; LS.set(GEO_KEY, JSON.stringify(geoCache)); return out;
+}
 /* a place shared from Google Maps: full links are read here; short links (maps.app.goo.gl) are opened by Gemini */
 async function resolveMapLink_(req) {
   const m = String(req.url || '').match(/https?:\/\/[^\s<>"]+/);
@@ -323,6 +371,7 @@ async function resolveMapLink_(req) {
       if (['ที่เที่ยว', 'ร้านอาหาร', 'ช้อปปิ้ง'].indexOf(out.kind) >= 0) kind = out.kind;
     } catch (_) {}
   }
+  if (lat === null && name) { const p = await placeGeo_(name, address || originalName); if (p) { lat = p.lat; lon = p.lon; } }
   return { name: name.slice(0, 80), address: address.slice(0, 500), originalName: originalName.slice(0, 500), lat, lon, kind };
 }
 
