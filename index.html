@@ -364,6 +364,8 @@ html.kb .dock{bottom:calc(6px + var(--kb,0px))}
 .seg button[aria-selected="true"],.seg button[aria-expanded="true"]{background:var(--soft);color:var(--deep);box-shadow:none}
 .seg em{background:var(--mid);color:var(--on)}
 .cat-add[class*="t-"]{background:var(--soft);color:var(--deep)}
+.idea-add-row{display:flex;gap:8px;flex-wrap:wrap;flex:none}
+.paste-link{width:100%;justify-content:center}
 .dot-sm{width:10px;height:10px;border-radius:999px;background:var(--mid);flex:none}
 .drop-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;font-size:0}
 .drop:focus-within{outline:3px solid var(--accent-line);outline-offset:2px}
@@ -2014,7 +2016,7 @@ function vTrip(){
   else if(tab === "idea"){
     const list = filteredIdeas();
     page = `${ideaToolbar()}<div class="dock-body page-list" data-k="idea">${list.length?`<ul class="cat-list">${list.map(catRow).join('')}</ul>`:`<p class="muted small">ไม่พบสถานที่</p>`}</div>
-      <button class="cat-add page-add t-idea" data-act="sheet" data-k="idea">${ic("plus",18)}เพิ่ม</button>`;
+      <div class="idea-add-row"><button class="cat-add page-add t-idea" data-act="sheet" data-k="idea">${ic("plus",18)}เพิ่ม</button><button class="cat-add page-add t-idea" data-act="paste-maps">${ic("pin",18)}วางลิงก์ Google Maps</button></div>`;
   }
   else if(tab === "help") page = vHelpPage();
   else if(tab === "info"){
@@ -2881,6 +2883,7 @@ function vSheet(){
       ${s.fromLink && S.trips.length > 1 ? `<label class="fld">ทริป<select id="sh-trip">${S.trips.map(x => `<option value="${esc(x.id)}" ${x.id === S.tripId ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>` : ""}
       ${s.linking ? `<div class="link-wait"><div class="spinner sm" role="status" aria-label="กำลังอ่านลิงก์"></div><span class="muted small">กำลังอ่านลิงก์จาก Google Maps…</span></div>` : ""}
       ${s.linkErr ? `<div class="err" role="alert">${esc(s.linkErr)}</div>` : ""}
+      ${!s.linking && !s.mapsUrl ? `<button type="button" class="cat-add paste-link t-idea" data-act="paste-maps">${ic("pin",18)}วางลิงก์จาก Google Maps</button><p class="muted small" style="margin:-4px 0 0">ใน Google Maps กด แชร์ → คัดลอกลิงก์ แล้วกลับมากดปุ่มนี้ หรือวางในช่องชื่อก็ได้</p>` : ""}
       <div class="chips t-idea">${IDEA_KINDS.map(k => `<button type="button" class="${IDEA_TONE[k]}" aria-pressed="${s.ideaKind===k}" data-act="idea-kind" data-m="${esc(k)}">${ic(IDEA_ICON[k],18)}${esc(k)}</button>`).join("")}</div>
       <label class="fld">ชื่อ<input id="sh-title" required maxlength="80" data-suggest="1" autocomplete="off" placeholder="${s.ideaKind==="ร้านอาหาร"?"เช่น Ichiran Shibuya":"เช่น teamLab Planets"}" value="${esc(s.title)}" data-bind="sheet:title"></label>
       <label class="fld">โน้ต<input id="sh-note" maxlength="120" placeholder="เช่น เพื่อนแนะนำ, ต้องจองก่อน" value="${esc(s.note)}" data-bind="sheet:note"></label>
@@ -3349,6 +3352,11 @@ document.addEventListener("change", e => {
   if(e.target.id === "file-in"){ const fl = Array.from(e.target.files || []); e.target.value = ""; if(fl.length) addFiles(fl); }
 });
 document.addEventListener("paste", e => {
+  if(e.target && e.target.id === "sh-title" && S.sheet && S.sheet.kind === "idea"){
+    const m = String((e.clipboardData && e.clipboardData.getData("text")) || "").match(MAPS_LINK);
+    if(m){ e.preventDefault(); fillFromLink(m[0]); }
+    return;
+  }
   if(S.view !== "upload" || !S.upload || S.upload.status === "reading") return;
   const files = Array.from((e.clipboardData && e.clipboardData.files) || []);
   const f = files.find(x => /^image\//.test(x.type) || x.type === "application/pdf");
@@ -3621,7 +3629,8 @@ document.addEventListener("click", async e => {
     case "paste-maps": {
       let txt = ""; try { txt = await navigator.clipboard.readText(); } catch(_){}
       const m = String(txt || "").match(MAPS_LINK);
-      if(!m){ toast("ยังไม่ได้คัดลอกลิงก์ Google Maps"); break; }
+      if(!m){ toast("ยังไม่ได้คัดลอกลิงก์ Google Maps (Maps → แชร์ → คัดลอกลิงก์)"); break; }
+      if(!S.sheet || S.sheet.kind !== "idea"){ S.sheet = {kind:"idea", title:"", note:"", ideaKind:"ที่เที่ยว"}; render(); }
       fillFromLink(m[0]); break; }
     case "day-ideas-open": S.sheet=null;S.catTab='planning';S.planner||={query:'',filter:''};S.dockHidden=false;render();break;
     case "planner-toggle": await togglePlannerIdea(el.dataset.id);break;
@@ -3809,7 +3818,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-2026-11-03-n";
+const BUILD = "junbi-2026-11-03-o";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
@@ -3849,7 +3858,7 @@ async function checkUpdate(){
   flush();
   checkUpdate();
   const m = (location.hash || "").match(/^#join-([A-Za-z0-9]{6})$/);
-  let add = ""; try { add = new URLSearchParams(location.search).get("add") || ""; } catch(_){}
+  let add = ""; try { const q = new URLSearchParams(location.search); add = q.get("add") || q.get("url") || q.get("text") || ""; } catch(_){}
   if(!add){ const h = (location.hash || "").match(/^#add=(.+)$/); if(h) try { add = decodeURIComponent(h[1]); } catch(_){} }
   const addUrl = (String(add).match(MAPS_LINK) || [])[0] || "";
   if(addUrl){ try { history.replaceState(null, "", location.pathname); } catch(_){} }
