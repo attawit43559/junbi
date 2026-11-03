@@ -1406,6 +1406,7 @@ const CLIENT_ID = '593453832447-qhu0itir9firda9csuivrknitqs5es2r.apps.googleuser
 const SCOPES = 'openid email profile https://www.googleapis.com/auth/drive.file';
 const AUTH_KEY = 'junbi-auth', FILES_KEY = 'junbi-files', ROOT_KEY = 'junbi-root';
 const DRIVE = 'https://www.googleapis.com/drive/v3', UPLOAD = 'https://www.googleapis.com/upload/drive/v3';
+const timed = ms => (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(ms) : undefined;
 const clone = o => o == null ? o : JSON.parse(JSON.stringify(o));
 const fail = code => { const e = new Error(code); e.code = code; return e; };
 
@@ -1499,8 +1500,8 @@ async function drive(path, opt = {}, base = DRIVE) {
   if (!auth || !auth.user) throw fail('auth_required');
   if (!tokenOk()) throw fail('reauth');
   let res;
-  try { res = await fetch(base + path, Object.assign({}, opt, { headers: Object.assign({ Authorization: 'Bearer ' + auth.token }, opt.headers || {}) })); }
-  catch (_) { throw fail('offline'); }
+  try { res = await fetch(base + path, Object.assign({ signal: timed(base === UPLOAD ? 120000 : 45000) }, opt, { headers: Object.assign({ Authorization: 'Bearer ' + auth.token }, opt.headers || {}) })); }
+  catch (e) { throw fail(e && e.name === 'TimeoutError' ? 'drive_busy' : 'offline'); }
   if (res.status === 401) { auth.expires = 0; LS.set(AUTH_KEY, JSON.stringify(auth)); throw fail('reauth'); }
   if (res.status === 404) throw fail('not_found');
   if (res.status === 403 || res.status === 429) { const t = await res.text(); throw fail(/insufficient|SCOPE/i.test(t) ? 'drive_scope' : /rate|quota/i.test(t) ? 'drive_busy' : 'drive_denied'); }
@@ -1585,13 +1586,13 @@ async function gemini(model, parts, opts, key) {
   if (opts.tools) body.tools = opts.tools;
   // newer AI Studio keys (AQ.…) are "auth keys"; send them the way Google accepts, and remember which way worked
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
-  const ways = !/^AIza/.test(key) ? [LS.get('junbi-ai-way') || 'header', 'header', 'bearer', 'query'].filter((w, i, a) => a.indexOf(w) === i) : ['header'];
+  const ways = /^AIza/.test(key) ? ['header'] : LS.get('junbi-ai-way') ? [LS.get('junbi-ai-way')] : ['header', 'bearer', 'query'];
   let res;
   for (const way of ways) {
     const headers = { 'Content-Type': 'application/json' };
     if (way === 'header') headers['x-goog-api-key'] = key; else if (way === 'bearer') headers.Authorization = 'Bearer ' + key;
-    try { res = await fetch(url + (way === 'query' ? '?key=' + encodeURIComponent(key) : ''), { method: 'POST', headers, body: JSON.stringify(body) }); }
-    catch (_) { throw fail('offline'); }
+    try { res = await fetch(url + (way === 'query' ? '?key=' + encodeURIComponent(key) : ''), { method: 'POST', headers, body: JSON.stringify(body), signal: timed(opts.timeout || 150000) }); }
+    catch (e) { throw fail(e && e.name === 'TimeoutError' ? 'ai_timeout' : 'offline'); }
     if (res.status !== 401) { if (ways.length > 1) LS.set('junbi-ai-way', way); break; }
   }
   if (res.status === 429) throw fail('rate_limited');
@@ -1616,7 +1617,7 @@ async function callGemini_(props, prompt, files, opts) {
       try { return await gemini(model, parts, opts, key); }
       catch (e) {
         last = e;
-        if (e.code === 'bad_ai_key' || e.code === 'offline') throw e;
+        if (e.code === 'bad_ai_key' || e.code === 'offline' || e.code === 'ai_timeout') throw e;
         if (/_(404|400)\b/.test(e.code)) break;              // this model is not offered: try the next one
         if (/_(503|500)\b/.test(e.code) || e.code === 'rate_limited' || e.code === 'ai_empty') { await wait(2500 + n * 2500); continue; }
         break;
@@ -1777,8 +1778,9 @@ async function run(action, body) {
 
 window.JunbiBackend = {
   call(action, body) {
-    const p = chain.then(() => run(action, body));
-    chain = p.catch(() => {});
+    const queued = WRITES.has(action) || action === 'myTrips' || action === 'getTrip';
+    const p = queued ? chain.then(() => run(action, body)) : run(action, body);
+    if (queued) chain = p.catch(() => {});
     return p.catch(e => { const code = String((e && (e.code || e.message)) || e || 'server_error').split(':')[0]; throw { code }; });
   },
   user: () => auth && auth.user ? Object.assign({}, auth.user) : null,

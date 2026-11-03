@@ -3008,10 +3008,13 @@ function buildReview(kind, res){
   return {kind, flights, stays, passengers:s_(res.passengers), bookingRef:s_(res.bookingRef), uncertain:unc};
 }
 function errCopy(code){
-  if(/^missing_/.test(code||"")) return "ยังไม่ได้ใส่ API key ใน Apps Script ลองกรอกเองไปก่อน";
+  if(/^missing_/.test(code||"")) return "ยังไม่ได้เชื่อม AI เลยอ่านใบจองไม่ได้ เชื่อม AI ฟรีก่อน หรือกรอกเองได้เลย";
+  if(code === "bad_ai_key") return "คีย์ AI ใช้ไม่ได้ ลองเชื่อม AI ใหม่ หรือกรอกเองได้เลย";
+  if(code === "ai_timeout") return "AI อ่านนานเกินไป ลองแนบทีละไฟล์ หรือกรอกเองได้เลย";
+  if(code === "rate_limited") return "AI ฟรีใช้ครบโควตาชั่วคราว ลองใหม่อีกสักครู่ หรือกรอกเองได้เลย";
   if(/^ai_error/.test(code||"")) return "ตัวอ่านใบจองตอบกลับผิดพลาด ลองใหม่อีกครั้ง หรือกรอกเอง";
   return ({
-    not_connected:"ยังไม่ได้เชื่อม Google Sheet เลยอ่านใบจองไม่ได้ ลองกรอกเองได้เลย",
+    not_connected:"ยังเชื่อม Google Drive ไม่ได้ ลองใหม่อีกครั้ง",
     pending_sync:"ยังมีข้อมูลรอซิงก์ รอให้บันทึกครบก่อนวิเคราะห์",
   offline:"ไม่มีอินเทอร์เน็ต ลองใหม่อีกครั้ง",
     server_error:"เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง",
@@ -3794,7 +3797,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-2026-11-03-i";
+const BUILD = "junbi-2026-11-03-j";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
