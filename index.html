@@ -1056,7 +1056,7 @@ async function refreshTrip(id){
     C.items[id] = next; C.revisions[id]=r.revision; emit();
   } catch(_) { S.tripLoading = false; emit(); }
 }
-function fail(e){ const c = e && e.code; if(c === "missing_GEMINI_API_KEY" || c === "bad_ai_key") return; if(c === "drive_scope") return; toast(c === "offline" ? "ไม่มีอินเทอร์เน็ต ลองใหม่อีกครั้ง" : c === "drive_denied" ? "Google Drive ไม่อนุญาตให้บันทึก ลองออกจากระบบแล้วเข้าใหม่" : c === "drive_busy" ? "Google Drive ไม่ว่าง ลองใหม่อีกสักครู่" : c === "reauth" ? "ต้องเชื่อม Google Drive อีกครั้งก่อน" : c === "rate_limited" ? "AI ฟรีใช้ครบโควตาชั่วคราว ลองใหม่อีกสักครู่" : "เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง"); }
+function fail(e){ const c = e && e.code; if(c === "missing_GEMINI_API_KEY" || c === "bad_ai_key") return; if(c === "drive_scope") return; toast(c === "offline" ? "ไม่มีอินเทอร์เน็ต ลองใหม่อีกครั้ง" : c === "drive_denied" ? "Google Drive ไม่อนุญาตให้บันทึก ลองออกจากระบบแล้วเข้าใหม่" : c === "drive_busy" ? "Google Drive ไม่ว่าง ลองใหม่อีกสักครู่" : c === "reauth" ? "ต้องเชื่อม Google Drive อีกครั้งก่อน" : c === "rate_limited" ? "AI ฟรีใช้ครบโควตาชั่วคราว ลองใหม่อีกสักครู่" : c === "rate_limited_day" ? "AI ฟรีของวันนี้ใช้ครบแล้ว เริ่มใหม่ประมาณ 15:00 น." : "เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง"); }
 
 /* files go to the AI and to Drive as base64; photos are shrunk first */
 const fileToB64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(blob); });
@@ -3013,6 +3013,7 @@ function errCopy(code){
   if(code === "ai_timeout") return "AI อ่านนานเกินไป ลองแนบทีละไฟล์ หรือกรอกเองได้เลย";
   if(code === "ai_busy") return "AI ของ Google ไม่ว่างตอนนี้ (มีคนใช้เยอะ) ลองใหม่อีกสักครู่ หรือกรอกเองได้เลย";
   if(code === "rate_limited") return "AI ฟรีใช้ครบโควตาชั่วคราว ลองใหม่อีกสักครู่ หรือกรอกเองได้เลย";
+  if(code === "rate_limited_day") return "AI ฟรีของวันนี้ใช้ครบแล้ว (Google เริ่มนับใหม่ประมาณ 15:00 น. เวลาไทย) ระหว่างนี้กรอกเองได้เลย";
   if(/^ai_error/.test(code||"")) return "ตัวอ่านใบจองตอบกลับผิดพลาด ลองใหม่อีกครั้ง หรือกรอกเอง";
   return ({
     not_connected:"ยังเชื่อม Google Drive ไม่ได้ ลองใหม่อีกครั้ง",
@@ -3064,7 +3065,7 @@ async function readAll(){
     const t0 = Date.now(), secs = () => Math.round((Date.now() - t0) / 1000);
     let last = "กำลังเตรียมส่งให้ AI";
     const onStep = ev => { const d = ev.detail || {};
-      last = d.step === "ai-send" ? `ส่งให้ AI (${d.model}${d.way && d.way !== "header" ? " · " + d.way : ""} · ${d.kb} KB)` : d.step === "ai-answer" ? `AI ตอบกลับ ${d.status}` : d.step === "ai-retry" ? `AI ไม่ว่าง ลองใหม่ (${d.code})` : d.step === "drive-upload" && !/AI/.test(last) ? "เก็บไฟล์ใน Drive" : last;
+      last = d.step === "ai-send" ? `ส่งให้ AI (${d.model}${d.way && d.way !== "header" ? " · " + d.way : ""} · ${d.kb} KB)` : d.step === "ai-answer" ? `AI ตอบกลับ ${d.status}` : d.step === "ai-wait" ? `AI ฟรีให้รอ ${d.secs} วิ` : d.step === "ai-retry" ? (/rate/.test(d.code) ? `โควตา ${d.model} หมด ลองรุ่นอื่น` : `AI ไม่ว่าง ลองใหม่ (${d.code})`) : d.step === "drive-upload" && !/AI/.test(last) ? "เก็บไฟล์ใน Drive" : last;
       setStep(last + " · " + secs() + " วิ"); };
     window.addEventListener("junbi-progress", onStep);
     const tick = setInterval(() => setStep(last + " · " + secs() + " วิ"), 1000);
@@ -3808,7 +3809,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-2026-11-03-m";
+const BUILD = "junbi-2026-11-03-n";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {

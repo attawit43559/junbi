@@ -1617,7 +1617,13 @@ async function gemini(model, parts, opts, key) {
     say('ai-answer', { model, way, status: res.status });
     if (res.status !== 401) { if (ways.length > 1) LS.set('junbi-ai-way', way); break; }
   }
-  if (res.status === 429) throw fail('rate_limited');
+  if (res.status === 429) {
+    // which free limit was hit: per minute (wait a little) or per day (this model is done until Google's midnight; other models have their own)
+    const txt = await res.text().catch(() => '');
+    const e = fail(/PerDay/i.test(txt) ? 'rate_limited_day' : 'rate_limited');
+    const d = txt.match(/"retryDelay"\s*:\s*"(\d+)/); e.retry = d ? Number(d[1]) : 0;
+    throw e;
+  }
   if (res.status === 401) throw fail('bad_ai_key');
   if (res.status === 400 || res.status === 403) { const t = await res.text(); if (/API key|API_KEY|permission|PERMISSION/i.test(t) && !/model/i.test(t)) throw fail('bad_ai_key'); throw fail('ai_error_' + res.status + ': ' + t.slice(0, 200)); }
   if (!res.ok) throw fail('ai_error_' + res.status);
@@ -1644,15 +1650,17 @@ async function callGemini_(props, prompt, files, opts) {
         last = e;
         if (e.code === 'bad_ai_key' || e.code === 'offline' || e.code === 'ai_timeout') throw e;
         if (/_(404|400)\b/.test(e.code)) break;              // this model is not offered: try the next one
+        if (e.code === 'rate_limited' && n === 0 && e.retry && e.retry <= 30) { say('ai-wait', { model, secs: e.retry }); await wait(e.retry * 1000 + 500); continue; }
+        if (e.code === 'rate_limited_day' || e.code === 'rate_limited') { say('ai-retry', { model, code: e.code }); break; }   // this model's free quota is used: try the next model
         if (/_(503|500)\b/.test(e.code)) busy = e;
         if (n < 2 && (/_(503|500)\b/.test(e.code) || e.code === 'ai_empty')) { say('ai-retry', { model, code: e.code }); await wait(n ? 9000 : 4000); continue; }
         break;
       }
     }
-    if (last && last.code === 'rate_limited') break;      // the free quota is used up for now; another model will not help
   }
   // say what really happened: Google busy beats "model not found" from a later fallback
-  if (last && last.code !== 'rate_limited' && busy) throw fail('ai_busy');
+  if (last && !/^rate_limited/.test(last.code) && busy) throw fail('ai_busy');
+  if (last && last.code === 'rate_limited_day') throw fail('rate_limited_day');
   throw last || fail('ai_error');
 }
 async function callGeminiMany_(props, prompts, extra) {
