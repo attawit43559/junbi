@@ -2063,7 +2063,7 @@ function vUpload(){
     ${files.length ? `<ul class="files">${files.map((f,i) => `<li class="file-chip">${ic("file",18)}<span class="grow">${esc(f.name || "ไฟล์")}</span>
       <button class="chip-x" data-act="rm-file" data-i="${i}" aria-label="เอา ${esc(f.name||"ไฟล์")} ออก">${ic("close",16)}</button></li>`).join("")}</ul>` : ""}
     <label class="fld" for="paste-text">รายละเอียดการจอง<textarea id="paste-text" rows="3" placeholder="พิมพ์หรือวางรายละเอียดการจอง" data-bind="upload:text">${esc(u.text||"")}</textarea></label>
-    ${u.status === "error" && u.err ? `<div class="err" role="alert">${esc(u.err)}</div>` : ""}
+    ${u.status === "error" && u.err ? `<div class="err" role="alert">${esc(u.err)}${u.errCode ? `<br><small class="muted">รหัส: ${esc(u.errCode)} · ${u.errAt || 0} วิ</small>` : ""}</div>` : ""}
     <button class="btn primary" data-act="read-all">บันทึก</button>
   `);
 }
@@ -3050,7 +3050,7 @@ async function readAll(){
   const files = u.files || [], pasted = s_(u.text);
   if(!files.length && !pasted){ u.status = "error"; u.err = errCopy("empty"); render(); return; }
   if(!files.length && pasted.replace(/\s/g,"").length < 30){ u.status = "error"; u.err = errCopy("too_short"); render(); return; }
-  u.status = "reading"; u.err = ""; u.step = "กำลังเตรียมไฟล์…"; u.ctl = new AbortController();
+  u.status = "reading"; u.err = ""; u.errCode = ""; u.startedAt = Date.now(); u.step = "กำลังเตรียมไฟล์…"; u.ctl = new AbortController();
   render();
   const signal = u.ctl.signal;
   try{
@@ -3075,7 +3075,7 @@ async function readAll(){
     go("review");
   } catch(e){
     if(e && e.code === "cancelled"){ u.status = "idle"; }
-    else { u.status = "error"; u.err = errCopy(e && e.code); }
+    else { u.status = "error"; u.err = errCopy(e && e.code); u.errCode = String(e && e.code || "unknown"); u.errAt = Math.round((Date.now() - (u.startedAt || Date.now())) / 1000); }
     render();
   }
 }
@@ -3797,7 +3797,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-2026-11-03-j";
+const BUILD = "junbi-2026-11-03-k";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
