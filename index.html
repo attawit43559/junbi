@@ -3815,16 +3815,27 @@ function needLogin(){
   JunbiBackend.signOut();
   setSession(null); go("login");
 }
+/* signing out: changes not yet in Drive are sent first; if they cannot be, a second tap within 6 seconds signs out anyway.
+   Everything this account left on the phone goes too (trips, ticket files kept for offline, AI key, place cache). */
 async function logout(){
+  if(C.outbox.length && !(logout.armed && Date.now() - logout.armed < 6000)){
+    try { await flush(); } catch(_){}
+    if(C.outbox.length){ logout.armed = Date.now(); toast(`ยังมี ${C.outbox.length} รายการที่ยังไม่ได้บันทึกลง Drive กดออกจากระบบอีกครั้งเพื่อออกโดยไม่บันทึก`); return; }
+  }
+  logout.armed = 0;
   JunbiBackend.signOut();
-  try { localStorage.removeItem(SESSION_KEY); } catch(_){}
+  JunbiBackend.forgetDevice();
+  try { localStorage.removeItem(SESSION_KEY); Object.keys(localStorage).filter(k => k.startsWith("junbi-app-") && k !== KEY && k !== "junbi-app-help").forEach(k => localStorage.removeItem(k)); } catch(_){}
   C.trips = {}; C.items = {}; C.myTrips = []; C.outbox = []; C.lastUser = null; persist();
+  try { if(DOCS.db) (await DOCS.db).close(); } catch(_){}
+  DOCS.db = null; DOCS.have.clear();
+  try { indexedDB.deleteDatabase("junbi-app-docs"); } catch(_){}
   setSession(null); S.trips = []; go("login");
 }
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-2026-11-03-r";
+const BUILD = "junbi-2026-11-05-a";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
@@ -3845,11 +3856,22 @@ async function checkUpdate(){
   setSession(u ? {token:"drive", user:u} : null);
   if(err && !u) S.loginErr = err === "access_denied" ? "ยังไม่ได้อนุญาตให้ Junbi ใช้ Google Drive ลองใหม่อีกครั้ง" : "เข้าสู่ระบบไม่สำเร็จ ลองใหม่อีกครั้ง";
   if(err === "drive_scope_missing"){ S.needDrive = true; S.loginErr = ""; }
+  // read a shared place / invite from the address first: a trip to Google's page (sign-in or a new Drive key) drops the address
+  const m = (location.hash || "").match(/^#join-([A-Za-z0-9]{6})$/);
+  let add = ""; try { const q = new URLSearchParams(location.search); add = q.get("add") || q.get("url") || q.get("text") || ""; } catch(_){}
+  if(!add){ const h = (location.hash || "").match(/^#add=(.+)$/); if(h) try { add = decodeURIComponent(h[1]); } catch(_){} }
+  // a place shared before signing in waits here while Google's sign-in page is open
+  if(!add){ try { add = sessionStorage.getItem("junbi-pending-add") || ""; sessionStorage.removeItem("junbi-pending-add"); } catch(_){} }
+  const addUrl = (String(add).match(MAPS_LINK) || [])[0] || "";
+  if(addUrl){ try { history.replaceState(null, "", location.pathname); } catch(_){} }
+  // drop the invite part of the address straight away, so a refresh, bookmark or home-screen icon opens the trip list
+  if(location.hash){ try { history.replaceState(null, "", location.pathname); } catch(_){} }
+  const keepAdd = () => { if(addUrl) try { sessionStorage.setItem("junbi-pending-add", addUrl); } catch(_){} };
   // an hour-old Drive key: get a new one quietly from Google (once a minute at most)
   const quiet = () => { let last = 0; try { last = +sessionStorage.getItem("junbi-refresh") || 0; } catch(_){} return Date.now() - last > 60000; };
   if(u && !JunbiBackend.tokenOk() && navigator.onLine){
     if(err === "interaction_required" || err === "login_required" || err === "consent_required") needReconnect();
-    else if(quiet()){ try { sessionStorage.setItem("junbi-refresh", String(Date.now())); } catch(_){} JunbiBackend.refresh(); return; }
+    else if(quiet()){ try { sessionStorage.setItem("junbi-refresh", String(Date.now())); } catch(_){} keepAdd(); JunbiBackend.refresh(); return; }
   }
   unsubTrips = store.watchMyTrips(list => { S.trips = list; if(S.view === "home") softRender(); });
   const refresh = () => { checkUpdate(); if(!S.token) return;
@@ -3863,16 +3885,7 @@ async function checkUpdate(){
   setInterval(refresh, 60000);
   flush();
   checkUpdate();
-  const m = (location.hash || "").match(/^#join-([A-Za-z0-9]{6})$/);
-  let add = ""; try { const q = new URLSearchParams(location.search); add = q.get("add") || q.get("url") || q.get("text") || ""; } catch(_){}
-  if(!add){ const h = (location.hash || "").match(/^#add=(.+)$/); if(h) try { add = decodeURIComponent(h[1]); } catch(_){} }
-  // a place shared before signing in waits here while Google's sign-in page is open
-  if(!add){ try { add = sessionStorage.getItem("junbi-pending-add") || ""; sessionStorage.removeItem("junbi-pending-add"); } catch(_){} }
-  const addUrl = (String(add).match(MAPS_LINK) || [])[0] || "";
-  if(addUrl){ try { history.replaceState(null, "", location.pathname); } catch(_){} }
-  // drop the invite part of the address straight away, so a refresh, bookmark or home-screen icon opens the trip list
-  if(location.hash){ try { history.replaceState(null, "", location.pathname); } catch(_){} }
-  if(!S.token){ S.pendingJoin = m ? m[1] : null; S.pendingAdd = addUrl; if(addUrl) try { sessionStorage.setItem("junbi-pending-add", addUrl); } catch(_){} go("login"); return; }
+  if(!S.token){ S.pendingJoin = m ? m[1] : null; S.pendingAdd = addUrl; keepAdd(); go("login"); return; }
   if(m) startJoin(m[1]);
   else if(addUrl){ go("home"); waitTrips(() => addFromLink(addUrl)); }
   else go("home");

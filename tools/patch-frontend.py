@@ -1,7 +1,8 @@
-"""One-time port of My Trip's page to Junbi: own Google sign-in + Drive storage (backend.js),
+"""HISTORY ONLY: already applied to index.html when Junbi was split from My Trip; running it again fails on purpose.
+One-time port of My Trip's page to Junbi: own Google sign-in + Drive storage (backend.js),
 the user's own Gemini key, new name and storage keys that never touch My Trip's data on the same site."""
 import pathlib, re
-p = pathlib.Path('/home/claude/junbi/index.html'); s = p.read_text()
+p = (pathlib.Path(__file__).resolve().parent.parent / 'index.html'); s = p.read_text()
 def rep(old, new, count=1):
     global s
     n = s.count(old)
@@ -198,7 +199,7 @@ p.write_text(s)
 print('patched', len(s))
 
 # ---- leftovers of the Apps Script version ----
-s = pathlib.Path('/home/claude/junbi/index.html').read_text()
+s = (pathlib.Path(__file__).resolve().parent.parent / 'index.html').read_text()
 def cut(a, b):
     global s
     i = s.index(a); j = s.index(b, i); s = s[:i] + s[j:]
@@ -209,5 +210,5 @@ cut('let gisReady = false;', 'function afterLogin(){')
 import re as _re
 s = _re.sub(r'const API_URL = "[^"]*";\n', '', s)
 assert 'mountGoogleButton' not in s and 'API_URL' not in s and 'google.accounts' not in s
-pathlib.Path('/home/claude/junbi/index.html').write_text(s)
+(pathlib.Path(__file__).resolve().parent.parent / 'index.html').write_text(s)
 print('cleaned', len(s))
