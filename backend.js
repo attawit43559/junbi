@@ -1464,7 +1464,9 @@ const here = () => location.origin + location.pathname.replace(/index\.html$/, '
 function tokenOk() { return !!(auth && auth.token && auth.expires > Date.now() + 60000); }
 function goToGoogle(prompt) {
   const state = Math.random().toString(36).slice(2);
+  // kept in localStorage too: on some phones the home-screen app comes back from Google with a fresh sessionStorage
   try { sessionStorage.setItem('junbi-oauth-state', state); } catch (_) {}
+  LS.set('junbi-oauth-state', state);
   const q = new URLSearchParams({ client_id: CLIENT_ID, redirect_uri: here(), response_type: 'token', scope: SCOPES, include_granted_scopes: 'true', state });
   if (prompt) q.set('prompt', prompt);
   if (auth && auth.user && auth.user.email) q.set('login_hint', auth.user.email);
@@ -1476,15 +1478,22 @@ async function finishSignIn() {
   const p = new URLSearchParams(location.hash.slice(1));
   history.replaceState(null, '', location.pathname + location.search);
   let want = null; try { want = sessionStorage.getItem('junbi-oauth-state'); } catch (_) {}
+  want = want || LS.get('junbi-oauth-state');
+  try { sessionStorage.removeItem('junbi-oauth-state'); } catch (_) {}
+  LS.set('junbi-oauth-state', null);
   if (p.get('error')) {
     try { sessionStorage.setItem('junbi-auth-error', p.get('error')); } catch (_) {}
     return null;
   }
-  if (want && p.get('state') !== want) return null;
+  // an answer this page did not ask for (no state, or someone else's) is never accepted
+  if (!want || p.get('state') !== want) { try { sessionStorage.setItem('junbi-auth-error', 'state_mismatch'); } catch (_) {} return null; }
   // Google lets people untick Drive on its page: without it nothing can be saved, so ask again
   if (!/drive\.file/.test(p.get('scope') || '')) { try { sessionStorage.setItem('junbi-auth-error', 'drive_scope_missing'); } catch (_) {} return null; }
   const token = p.get('access_token'), expires = Date.now() + (Number(p.get('expires_in')) || 3600) * 1000;
-  const info = await (await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + token } })).json();
+  const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + token }, signal: timed(20000) });
+  if (!res.ok) { try { sessionStorage.setItem('junbi-auth-error', 'userinfo_' + res.status); } catch (_) {} return null; }
+  const info = await res.json();
+  if (!info || !info.sub) { try { sessionStorage.setItem('junbi-auth-error', 'userinfo_empty'); } catch (_) {} return null; }
   const user = { uid: 'g-' + info.sub, name: String(info.given_name || info.name || info.email || '').slice(0, 40), email: info.email || '', picture: info.picture || '' };
   if (auth && auth.user && auth.user.uid !== user.uid) { LS.set(FILES_KEY, null); LS.set(ROOT_KEY, null); }
   auth = { token, expires, user }; LS.set(AUTH_KEY, JSON.stringify(auth));
@@ -1830,6 +1839,9 @@ ACTIONS.geocode = async req => { const out = []; for (const x of (Array.isArray(
 ACTIONS.resolveMapLink = req => resolveMapLink_(req);
 ACTIONS.travelOptions = req => travelCompare_(req, !!req.ai);
 ACTIONS.shareKey = () => ({ key: null });
+/* from My Trip's server, not used here (they need Google Maps or a server): say so instead of half-running */
+ACTIONS.mapImage = () => { throw fail('not_supported'); };
+ACTIONS.shareAdd = () => { throw fail('not_supported'); };
 ACTIONS.shareKeyOff = () => true;
 ACTIONS.shareTrip = () => false;
 ACTIONS.logout = () => true;
@@ -1876,6 +1888,11 @@ window.JunbiBackend = {
   refresh: () => goToGoogle('none'),
   finishSignIn,
   signOut,
+  /* signing out on purpose: nothing of this account stays on the phone (AI key, models, place cache) */
+  forgetDevice() {
+    for (const k of [AI_KEY, AI_MODEL, 'junbi-ai-models', 'junbi-ai-way', GEO_KEY, 'junbi-oauth-state']) LS.set(k, null);
+    geoCache = {};
+  },
   aiKey: () => LS.get(AI_KEY) || '',
   setAiKey: k => LS.set(AI_KEY, k ? String(k).trim() : null),
   async testAiKey(k) {
