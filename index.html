@@ -180,6 +180,13 @@ p{margin:0}
 .ai-steps .pill-btn.primary{background:#0B4A8C;color:#fff}
 .ai-key-row{display:flex;gap:8px}.ai-key-row input{flex:1;min-width:0;height:44px;border-radius:14px;border:0;box-shadow:inset 0 0 0 1px var(--line);background:var(--surface);padding:0 12px;font-size:14px}
 .ai-key-row button{height:44px;border-radius:14px;border:0;background:var(--ink);color:var(--bg);padding:0 14px;font:inherit;font-weight:500}
+.gm-steps li.need .n{background:#B3261E;color:#fff}
+.gm-fix{display:flex;gap:10px;align-items:center;justify-content:space-between}.gm-fix .pill-btn{flex:none;text-decoration:none;background:var(--surface);color:var(--ink)}
+.gm-lock{display:flex;flex-direction:column;gap:8px;margin-top:8px}.gm-lock ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.gm-lock .pill-btn,.gm-setup details>.pill-btn{align-self:flex-start;text-decoration:none;background:var(--tile);color:var(--ink);height:40px}
+.gm-copy{display:flex;gap:8px;align-items:center;margin-top:6px}.gm-copy code{flex:1;min-width:0;overflow-wrap:anywhere;background:var(--tile);border-radius:10px;padding:8px 10px;font-size:13px;color:var(--ink)}.gm-copy .pill-btn{height:36px;background:var(--tile);color:var(--ink)}
+.gm-hint{border:0;background:none;padding:2px 0;color:var(--muted);font:inherit;font-size:13px;display:flex;gap:6px;align-items:center;text-align:left}.gm-hint b{color:#0B4A8C;font-weight:600}
+.sugg li.sugg-attr{cursor:default;justify-content:flex-end;padding:4px 10px;font-size:11px;color:var(--muted)}
 .ai-ok{display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:16px;background:var(--tile)}.ai-ok>svg{color:#0B4A8C}
 .ai-more summary{cursor:pointer;font-size:14px;color:var(--muted)}
 .menu a{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit}
@@ -2132,6 +2139,7 @@ function vAccount(){
     <p class="muted small" style="margin-top:-8px">${esc(S.user && S.user.email || "")}</p>
     <div class="menu">
       <button data-act="ai-setup">${ic("spark",20)}<span class="grow">AI ผู้ช่วย</span><span class="muted small">${key ? "เชื่อมแล้ว" : "ยังไม่เชื่อม"}</span></button>
+      <button data-act="gmaps-setup">${ic("pin",20)}<span class="grow">Google Maps</span><span class="muted small">${gmapsOwnKey() ? (gmapsBroken ? "ต้องแก้ไข" : "เชื่อมแล้ว") : gmapsFamily() ? "ใช้คีย์ครอบครัว" : "ยังไม่เชื่อม"}</span></button>
       <a href="https://drive.google.com/drive/search?q=Junbi" target="_blank" rel="noopener">${ic("file",20)}<span class="grow">ข้อมูลของฉันใน Google Drive</span>${ic("ext",16)}</a>
       <a href="privacy.html" target="_blank" rel="noopener">${ic("info",20)}<span class="grow">นโยบายความเป็นส่วนตัว</span>${ic("ext",16)}</a>
       <button class="danger" data-act="logout">${ic("leave",20)}ออกจากระบบ</button>
@@ -2158,6 +2166,53 @@ function vAiSetup(s){
       ${s.err ? `<p class="err" role="alert">${esc(s.err)}</p>` : ""}
       <details class="ai-more"><summary>เรื่องความเป็นส่วนตัวและโควตา</summary><p class="muted small">คำขอ AI ส่งตรงจากเครื่องคุณไปที่ Google ไม่ผ่านเซิร์ฟเวอร์ของ Junbi · แบบฟรีมีโควตาต่อวัน ถ้าครบแอปจะบอกให้ลองใหม่ทีหลัง · ในแบบฟรี Google อาจใช้ข้อความที่ส่งไปเพื่อปรับปรุงบริการ ข้อมูลฉุกเฉินจะแปลครั้งเดียวแล้วเก็บไว้</p></details>`}
   </div></div>`;
+}
+/* connecting the person's own Google Maps key, step by step; when Google refuses, say which step to fix */
+function vGmapsSetup(s){
+  const own = gmapsOwnKey(), mask = k => k.slice(0, 6) + "••••" + k.slice(-4), fam = !own && gmapsFamily();
+  const fix = s.fix || (own && gmapsBroken ? gmapsFix({reason:gmapsBroken}) : null);
+  const step = (n, body, btn) => `<li class="${fix && fix.step === n ? "need" : ""}"><span class="n">${n}</span><span class="grow">${body}</span>${btn || ""}</li>`;
+  const open = (href, label = "เปิด") => `<a class="pill-btn" href="${esc(href)}" target="_blank" rel="noopener">${esc(label)}${ic("ext",14)}</a>`;
+  const fixBox = fix ? `<div class="err gm-fix" role="alert"><span>${fix.step ? `<b>ต้องแก้ขั้นที่ ${fix.step}:</b> ` : ""}${esc(fix.text)}</span>${fix.href ? open(fix.href, fix.label || "เปิด") : ""}</div>` : "";
+  const lock = `<div class="gm-lock"><p class="small"><b>ล็อกคีย์ให้ใช้ได้แค่กับ Junbi</b> (แนะนำ คนอื่นเอาคีย์ไปใช้ไม่ได้)</p>
+    <ol class="small muted"><li>เปิดหน้าคีย์ แล้วกดชื่อคีย์</li><li>ที่ <b>Application restrictions</b> เลือก <b>Websites</b> แล้ววางที่อยู่นี้<div class="gm-copy"><code>${esc(gmapsSite())}</code><button type="button" class="pill-btn" data-act="gmaps-copy-site">คัดลอก</button></div></li><li>ที่ <b>API restrictions</b> เลือก <b>Restrict key</b> → <b>Places API (New)</b> แล้วกด <b>Save</b></li></ol>
+    ${open(GMAPS_CONSOLE.keys, "เปิดหน้าคีย์")}</div>`;
+  return `<div class="scrim" data-act="close-sheet"><div class="sheet ai-setup gm-setup" role="dialog" aria-modal="true" aria-label="เชื่อม Google Maps" data-stop="1">
+    <div class="hd"><h2>Google Maps</h2><button class="round" data-act="close-sheet" aria-label="ปิด">${ic("close")}</button></div>
+    ${own && !s.editing ? `<div class="ai-ok">${ic("check",20)}<span><b>${gmapsBroken ? "เชื่อมไว้ แต่ตอนนี้ใช้ไม่ได้" : "เชื่อม Google Maps แล้ว"}</b><br><span class="muted small">คีย์ ${esc(mask(own))} · ค้นหาและตำแหน่งสถานที่มาจาก Google Maps</span></span></div>
+      ${fixBox}
+      ${gmapsBroken ? `<button class="btn primary" data-act="gmaps-retest" ${s.busy ? "disabled" : ""}>${s.busy ? "กำลังลอง…" : "แก้แล้ว ลองอีกครั้ง"}</button>` : ""}
+      <details class="ai-more"${s.justSaved ? " open" : ""}><summary>ล็อกคีย์และตั้งเพดานรายวัน</summary>${lock}
+        <p class="small"><b>เพดานรายวัน</b> (ไม่บังคับ): เปิดหน้าโควตา หา <b>Place Details</b> แล้วตั้งต่อวันไว้ เช่น 300 ครั้ง จะไม่มีทางเกินส่วนฟรี</p>${open(GMAPS_CONSOLE.quota, "เปิดหน้าโควตา")}</details>
+      <div class="menu"><button data-act="gmaps-change">${ic("edit",20)}เปลี่ยนคีย์</button><button class="danger" data-act="gmaps-remove">${ic("trash",20)}เลิกเชื่อม Google Maps</button></div>` : `
+      <p class="muted small">ทำให้ค้นหาสถานที่ได้ครบแบบ Google Maps และได้ตำแหน่งตรงเป๊ะ ใช้บัญชี Google Cloud ของคุณเอง ใช้เวลาประมาณ 10 นาที ทำครั้งเดียว${fam ? " (ตอนนี้ใช้คีย์ของครอบครัวอยู่แล้ว)" : ""}</p>
+      <p class="note">${ic("info",18)}<span>Google ขอบัตรตอนสมัคร แต่ให้ใช้ฟรีเดือนละหลายพันครั้ง วางแผนทริปปกติใช้แค่หลักร้อย จึงไม่เสียเงิน และตั้งเพดานรายวันได้หลังเชื่อมเสร็จ</span></p>
+      ${fixBox}
+      <ol class="ai-steps gm-steps">
+        ${step(1, `เปิด Google Maps Platform กด <b>เริ่มต้นใช้งาน (Get started)</b> แล้วทำตามจนใส่บัตรเสร็จ`, open(GMAPS_CONSOLE.start))}
+        ${step(2, `เปิดใช้ <b>Places API (New)</b> กด <b>Enable</b> (ถ้าขึ้นว่าเปิดแล้วก็ข้ามได้)`, open(GMAPS_CONSOLE.enable))}
+        ${step(3, `เปิดหน้าคีย์ กด <b>คัดลอก</b> ที่ API key (ถ้ายังไม่มี กด <b>Create credentials → API key</b>)`, open(GMAPS_CONSOLE.keys))}
+        ${step(4, `กลับมาที่แอปนี้แล้วกดวางคีย์ แอปจะลองค้นหาให้ทันที`, `<button class="pill-btn primary" data-act="gmaps-paste" ${s.busy ? "disabled" : ""}>วางคีย์</button>`)}
+      </ol>
+      <form class="ai-key-row" data-form="gmaps-key"><label class="sr" for="gm-key">คีย์ Google Maps</label><input id="gm-key" name="key" placeholder="หรือวางคีย์ตรงนี้ (AIza…)" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(s.key || "")}" data-bind="sheet:key"><button type="submit" ${s.busy ? "disabled" : ""}>${s.busy ? "กำลังลอง…" : "ลองคีย์"}</button></form>
+      <details class="ai-more"${fix && fix.step === 5 ? " open" : ""}><summary>ขั้นที่ 5: ล็อกคีย์ (ทำหลังเชื่อมได้แล้ว)</summary>${lock}</details>
+      <details class="ai-more"><summary>ความเป็นส่วนตัวและค่าใช้จ่าย</summary><p class="muted small">คำค้นหาส่งตรงจากเครื่องคุณไปที่ Google ไม่ผ่านเซิร์ฟเวอร์ของ Junbi · คีย์เก็บในเครื่องนี้ และถูกลบเมื่อออกจากระบบ · ถ้าคีย์ใช้ไม่ได้หรือครบเพดาน แอปจะกลับไปค้นหาด้วย OpenStreetMap เอง · Google คิดเงินเข้าบัญชี Google Cloud ของคุณ เฉพาะส่วนที่เกินโควตาฟรีรายเดือน</p></details>`}
+  </div></div>`;
+}
+/* the Maps key: one real search; kept only when Google answers (a full daily quota still counts as working) */
+function findGmapsKey(txt){ const m = String(txt || "").match(/AIza[0-9A-Za-z_\-]{30,}/); return m ? m[0] : ""; }
+async function gmapsTry(k){
+  const s = S.sheet; if(!s || s.kind !== "gmaps-setup" || s.busy) return;
+  s.busy = true; s.fix = null; s.key = k; render();
+  let ok = false;
+  try { await gmapsCall("places:autocomplete", {key:k, body:{input:"Tokyo Tower", languageCode:"th"}}); ok = true; }
+  catch(e){ if(e && (e.reason === "RATE_LIMIT_EXCEEDED" || e.reason === "RESOURCE_EXHAUSTED")) ok = true; else s.fix = gmapsFix(e); }
+  s.busy = false;
+  if(ok){
+    setGmapsOwnKey(k); s.key = ""; s.editing = false; s.justSaved = true; toast("เชื่อม Google Maps แล้ว ค้นหาสถานที่จาก Google ได้เลย");
+    if(s.back){ const b = s.back; S.sheet = b; }
+  }
+  render();
 }
 function vJoin(){
   const t = S.joinTrip;
@@ -2798,17 +2853,6 @@ async function exportShare(){
 }
 /* ---------- places shared from Google Maps ---------- */
 const MAPS_LINK = /https?:\/\/(?:maps\.app\.goo\.gl|goo\.gl\/maps|(?:www\.)?google\.[a-z.]+\/maps|maps\.google\.[a-z.]+)\S*/i;
-/* Google's id for a place, so "Google Maps" in the app opens that exact place (an ids-only lookup, free) */
-async function gmapsFindId(name, lat, lon){
-  if(!GMAPS_KEY || !name) return "";
-  try{
-    const r = await fetch("https://places.googleapis.com/v1/places:searchText", {method:"POST",
-      headers:{"Content-Type":"application/json", "X-Goog-Api-Key":GMAPS_KEY, "X-Goog-FieldMask":"places.id"},
-      body:JSON.stringify({textQuery:name, pageSize:1, ...(lat != null && lon != null ? {locationBias:{circle:{center:{latitude:lat, longitude:lon}, radius:500}}} : {})})});
-    if(!r.ok) return "";
-    const j = await r.json(); return ((j.places || [])[0] || {}).id || "";
-  } catch(_){ return ""; }
-}
 /* fill the open "add to สนใจ" sheet from a Google Maps link */
 async function fillFromLink(url){
   const s = S.sheet; if(!s || s.kind !== "idea") return;
@@ -2818,7 +2862,10 @@ async function fillFromLink(url){
     if(S.sheet !== s) return;
     const label=mapNameParts(r.name);
     s.title = label.name || s.title; s.ideaKind = r.kind || s.ideaKind; s.lat = r.lat; s.lon = r.lon; s.address = r.address || label.address; s.originalMapsName = r.originalName || r.name || ""; s.mapsUrl = url;
-    s.placeId = await gmapsFindId(r.name, r.lat, r.lon);
+    /* with a Google Maps key: Google's own position for the place in the link (OpenStreetMap/GSI is only a guess) */
+    const g = await gmapsLocate(r.originalName || r.name, r.lat, r.lon).catch(e => { gmapsFailed(e); return null; });
+    if(S.sheet !== s) return;
+    if(g){ s.lat = g.lat; s.lon = g.lon; s.placeId = g.placeId; if(g.address) s.address = g.address; }
   } catch(e){
     if(S.sheet !== s) return;
     const c = (e && e.code) || "";
@@ -2856,6 +2903,7 @@ function vSheet(){
   if(s.kind === "trip-edit") return vTripEdit(s);
   if(s.kind === "account") return vAccount();
   if(s.kind === "ai-setup") return vAiSetup(s);
+  if(s.kind === "gmaps-setup") return vGmapsSetup(s);
   if(s.kind === "export") return vExport(s);
   if(s.kind === "clear") return vClear(s);
   const t = S.trip;
@@ -2890,6 +2938,7 @@ function vSheet(){
       ${s.linking ? `<div class="link-wait"><div class="spinner sm" role="status" aria-label="กำลังอ่านลิงก์"></div><span class="muted small">กำลังอ่านลิงก์จาก Google Maps…</span></div>` : ""}
       ${s.linkErr ? `<div class="err" role="alert">${esc(s.linkErr)}</div>` : ""}
       ${!s.linking && !s.mapsUrl ? `<button type="button" class="cat-add paste-link t-idea" data-act="paste-maps">${ic("pin",18)}วางลิงก์จาก Google Maps</button><p class="muted small" style="margin:-4px 0 0">ใน Google Maps กด แชร์ → คัดลอกลิงก์ แล้วกลับมากดปุ่มนี้ หรือวางในช่องชื่อก็ได้</p>` : ""}
+      ${!gmapsKey() ? `<button type="button" class="gm-hint" data-act="gmaps-setup">${ic("pin",16)}ค้นหาไม่เจอ หรือตำแหน่งไม่ตรง? <b>เชื่อม Google Maps</b></button>` : ""}
       <div class="chips t-idea">${IDEA_KINDS.map(k => `<button type="button" class="${IDEA_TONE[k]}" aria-pressed="${s.ideaKind===k}" data-act="idea-kind" data-m="${esc(k)}">${ic(IDEA_ICON[k],18)}${esc(k)}</button>`).join("")}</div>
       <label class="fld">ชื่อ<input id="sh-title" required maxlength="80" data-suggest="1" autocomplete="off" placeholder="${s.ideaKind==="ร้านอาหาร"?"เช่น Ichiran Shibuya":"เช่น teamLab Planets"}" value="${esc(s.title)}" data-bind="sheet:title"></label>
       <label class="fld">โน้ต<input id="sh-note" maxlength="120" placeholder="เช่น เพื่อนแนะนำ, ต้องจองก่อน" value="${esc(s.note)}" data-bind="sheet:note"></label>
@@ -3191,7 +3240,83 @@ document.addEventListener("input", e => {
   if(e.target.dataset.suggest !== undefined && e.isTrusted) suggestSoon(e.target);
 });
 /* place suggestions while typing: Google Places when a key is set, else OpenStreetMap (Photon), which is free and keyless */
-const GMAPS_KEY = "";   // no paid Google Maps lookups in Junbi (they would bill the developer); places come from the shared link instead
+/* Google Maps place search. Each person can connect their own Maps key (it bills their own Google Cloud account;
+   normal trip planning stays inside Google's free monthly allowance). Optionally a family key, used only for the
+   sign-ins listed. No key: OpenStreetMap / Photon as before. */
+const GMAPS_FAMILY = {key:"", emails:[]};
+const GMAPS_OWN = "junbi-app-gmaps-key";   // a junbi-app-* key, so signing out removes it
+const GMAPS_CONSOLE = {
+  start:"https://console.cloud.google.com/google/maps-apis/start",
+  enable:"https://console.cloud.google.com/apis/library/places.googleapis.com",
+  keys:"https://console.cloud.google.com/projectselector/google/maps-apis/credentials",
+  billing:"https://console.cloud.google.com/projectselector/billing",
+  quota:"https://console.cloud.google.com/apis/api/places.googleapis.com/quotas"};
+function gmapsOwnKey(){ try { return localStorage.getItem(GMAPS_OWN) || ""; } catch(_){ return ""; } }
+function setGmapsOwnKey(k){ try { k ? localStorage.setItem(GMAPS_OWN, k) : localStorage.removeItem(GMAPS_OWN); } catch(_){} gmapsBroken = ""; gmapsDownUntil = 0; }
+function gmapsFamily(){ const e = String(S.user && S.user.email || "").toLowerCase(); return !!(GMAPS_FAMILY.key && e && GMAPS_FAMILY.emails.some(x => String(x).toLowerCase() === e)); }
+function gmapsKey(){ return gmapsOwnKey() || (gmapsFamily() ? GMAPS_FAMILY.key : ""); }
+/* the address to lock a key to: this site, any page */
+function gmapsSite(){ return location.origin + location.pathname.replace(/[^/]*$/, "") + "*"; }
+/* one call to Places API (New); a refusal comes back as {code:"gmaps", reason} using Google's own reason names */
+async function gmapsCall(path, {key = gmapsKey(), body = null, fields = "", signal} = {}){
+  let r;
+  try {
+    r = await fetch("https://places.googleapis.com/v1/" + path, {method: body ? "POST" : "GET", signal,
+      headers:{...(body ? {"Content-Type":"application/json"} : {}), "X-Goog-Api-Key":key, ...(fields ? {"X-Goog-FieldMask":fields} : {})},
+      ...(body ? {body:JSON.stringify(body)} : {})});
+  } catch(e){ if(e && e.name === "AbortError") throw e; throw {code:"gmaps", reason:navigator.onLine === false ? "OFFLINE" : "NETWORK", meta:{}}; }
+  if(r.ok) return r.json();
+  let j = {}; try { j = await r.json(); } catch(_){}
+  const err = j.error || {}, info = (err.details || []).find(d => d && d.reason) || {}, msg = String(err.message || "");
+  const reason = info.reason
+    || (/billing/i.test(msg) ? "BILLING_DISABLED"
+      : /has not been used|is disabled|not been enabled/i.test(msg) ? "SERVICE_DISABLED"
+      : /referer|referrer/i.test(msg) ? "API_KEY_HTTP_REFERRER_BLOCKED"
+      : /api key not valid|invalid api key/i.test(msg) ? "API_KEY_INVALID"
+      : /are blocked/i.test(msg) ? "API_KEY_SERVICE_BLOCKED"
+      : r.status === 429 ? "RATE_LIMIT_EXCEEDED" : "HTTP_" + r.status);
+  throw {code:"gmaps", status:r.status, reason, meta:info.metadata || {}, message:msg};
+}
+const GMAPS_SOFT = new Set(["OFFLINE", "NETWORK", "RATE_LIMIT_EXCEEDED", "RESOURCE_EXHAUSTED", "RESOURCE_QUOTA_EXCEEDED", "HTTP_500", "HTTP_503"]);
+let gmapsBroken = "";   // a saved key Google refuses (billing removed, API switched off...): the account menu says so
+function gmapsFailed(e){
+  if(!e || e.name === "AbortError") return;
+  gmapsDownUntil = Date.now() + 10*60*1000;   // use OpenStreetMap for a while
+  if(e.code === "gmaps" && !GMAPS_SOFT.has(e.reason)) gmapsBroken = e.reason;
+}
+/* Google's exact position for a picked place. Ending an autocomplete session with this lookup makes the
+   typing suggestions free; the lookup itself is "Place Details Essentials" (10,000 free a month). */
+async function gmapsPlace(placeId, session){
+  if(!placeId || !gmapsKey() || !gmapsAllowance()) return null;
+  const j = await gmapsCall("places/" + encodeURIComponent(placeId) + (session ? "?sessionToken=" + encodeURIComponent(session) : ""), {fields:"id,location,formattedAddress,googleMapsUri"});
+  const loc = j.location || {};
+  if(typeof loc.latitude !== "number" || typeof loc.longitude !== "number") return null;
+  return {placeId:j.id || placeId, lat:+loc.latitude.toFixed(6), lon:+loc.longitude.toFixed(6), address:j.formattedAddress || "", mapsUrl:j.googleMapsUri || ""};
+}
+/* a place named in a shared Google Maps link: find it on Google (ids-only search, free) then its position */
+async function gmapsLocate(query, lat, lon){
+  if(!query || !gmapsKey() || Date.now() < gmapsDownUntil || !gmapsAllowance()) return null;
+  const near = lat != null && lon != null && lat !== "" && isFinite(+lat) && isFinite(+lon);
+  const j = await gmapsCall("places:searchText", {fields:"places.id",
+    body:{textQuery:query, pageSize:1, ...(near ? {locationBias:{circle:{center:{latitude:+lat, longitude:+lon}, radius:3000}}} : {})}});
+  const id = ((j.places || [])[0] || {}).id;
+  return id ? gmapsPlace(id, "") : null;
+}
+/* what to tell the person when Google refuses their key, and which setup step fixes it */
+function gmapsFix(e){
+  const r = e && e.reason || "", m = e && e.meta || {};
+  const proj = String(m.consumer || m.containerInfo || "").match(/projects\/(\d+)/);
+  switch(r){
+    case "API_KEY_INVALID": return {step:3, text:"คีย์นี้ไม่ถูกต้อง คัดลอกคีย์ใหม่ในขั้นที่ 3 ให้ครบทั้งคีย์ (ขึ้นต้นด้วย AIza)"};
+    case "BILLING_DISABLED": return {step:1, text:"โปรเจกต์นี้ยังไม่ได้ใส่บัตร Google ต้องมีบัตรก่อนถึงจะเปิดใช้ แม้จะใช้แค่ส่วนฟรี", href:proj ? "https://console.cloud.google.com/billing/linkedaccount?project=" + proj[1] : GMAPS_CONSOLE.billing, label:"ใส่บัตร"};
+    case "SERVICE_DISABLED": return {step:2, text:"ยังไม่ได้เปิด Places API (New) กดเปิด แล้วกด Enable รอสักครู่แล้วลองใหม่", href:m.activationUrl || GMAPS_CONSOLE.enable, label:"เปิดใช้"};
+    case "API_KEY_SERVICE_BLOCKED": return {step:5, text:"คีย์นี้ถูกจำกัดไม่ให้ใช้ Places API (New) ตอนจำกัด API ให้เลือก Places API (New) ด้วย", href:GMAPS_CONSOLE.keys, label:"แก้คีย์"};
+    case "API_KEY_HTTP_REFERRER_BLOCKED": return {step:5, text:"คีย์นี้ล็อกเว็บไว้ไม่ตรงกับ Junbi ใส่ที่อยู่เว็บในขั้นที่ 5 ให้ตรง", href:GMAPS_CONSOLE.keys, label:"แก้คีย์"};
+    case "OFFLINE": return {text:"ไม่มีอินเทอร์เน็ต ลองใหม่อีกครั้ง"};
+    case "NETWORK": return {text:"ติดต่อ Google ไม่ได้ ลองใหม่อีกครั้ง"};
+    default: return {text:"Google ยังไม่ยอมรับคีย์นี้ (" + String(r || "error").slice(0, 40) + ") ลองทำขั้นที่ 1–3 ให้ครบแล้วลองใหม่"};
+  }
+}
 /* each phone asks Google at most this many times a day; after that (or if Google fails) suggestions come from OpenStreetMap */
 const GMAPS_DAILY = 150;
 function gmapsAllowance(){
@@ -3214,20 +3339,16 @@ async function fetchSuggest(input, q){
   try{
     if(sugCtl) sugCtl.abort(); sugCtl = new AbortController();
     let list;
-    if(GMAPS_KEY && Date.now() > gmapsDownUntil && gmapsAllowance()){
+    if(gmapsKey() && Date.now() > gmapsDownUntil && gmapsAllowance()){
       try{
         if(!sugSession) sugSession = (crypto.randomUUID ? crypto.randomUUID() : rid());
-        const r = await fetch("https://places.googleapis.com/v1/places:autocomplete", {method:"POST", signal:sugCtl.signal,
-          headers:{"Content-Type":"application/json", "X-Goog-Api-Key":GMAPS_KEY},
-          body:JSON.stringify({input:q, languageCode:"th", sessionToken:sugSession})});
-        if(!r.ok) throw {code:r.status};
-        const j = await r.json();
+        const j = await gmapsCall("places:autocomplete", {signal:sugCtl.signal, body:{input:q, languageCode:"th", sessionToken:sugSession}});
         list = (j.suggestions || []).map(x => x.placePrediction).filter(Boolean).map(pp => ({
           name:(pp.structuredFormat && pp.structuredFormat.mainText && pp.structuredFormat.mainText.text) || (pp.text && pp.text.text) || "",
           area:(pp.structuredFormat && pp.structuredFormat.secondaryText && pp.structuredFormat.secondaryText.text) || "", placeId:pp.placeId})).slice(0, 6);
       } catch(e){
         if(e && e.name === "AbortError") throw e;
-        gmapsDownUntil = Date.now() + 10*60*1000;   // Google said no (billing paused, quota, network): use OpenStreetMap for a while
+        gmapsFailed(e);   // Google said no (billing paused, quota, network): OpenStreetMap for a while
         list = await photonList(q);
       }
     } else list = await photonList(q);
@@ -3250,19 +3371,24 @@ async function photonList(q){
 }
 function showSuggest(input, list){
     const ul = document.createElement("ul"); ul.className = "sugg"; ul.setAttribute("role", "listbox");
-    ul.innerHTML = list.map((x, i) => `<li role="option" data-i="${i}">${ic("pin",18)}<span><b>${esc(x.name)}</b>${x.area ? `<br><span class="muted small">${esc(x.area)}</span>` : ""}</span></li>`).join("");
+    ul.innerHTML = list.map((x, i) => `<li role="option" data-i="${i}">${ic("pin",18)}<span><b>${esc(x.name)}</b>${x.area ? `<br><span class="muted small">${esc(x.area)}</span>` : ""}</span></li>`).join("")
+      + (list.some(x => x.placeId) ? `<li class="sugg-attr" aria-hidden="true">ค้นหาด้วย Google Maps</li>` : "");
     /* keep focus on the input while tapping, and pick on click: removing the list on pointerdown shrank the
        bottom sheet, so the tap's click landed on the scrim behind it and closed the sheet */
     const hold = ev => { ev.preventDefault(); sugHold = Date.now(); };
     ul.addEventListener("pointerdown", hold); ul.addEventListener("mousedown", hold);
     ul.addEventListener("touchstart", () => { sugHold = Date.now(); }, {passive:true});
     ul.addEventListener("click", ev => {
-      const li = ev.target.closest("li"); if(!li) return;
+      const li = ev.target.closest("li[data-i]"); if(!li) return;
       ev.preventDefault(); ev.stopPropagation();
       const x = list[+li.dataset.i];
       input.value = x.name;
       input.dispatchEvent(new Event("input", {bubbles:true}));
-      if(S.sheet && input.id === "sh-title"){ S.sheet.address = x.area; S.sheet.lat = x.lat; S.sheet.lon = x.lon; S.sheet.placeId = x.placeId; }
+      if(S.sheet && input.id === "sh-title"){ S.sheet.address = x.area; S.sheet.lat = x.lat; S.sheet.lon = x.lon; S.sheet.placeId = x.placeId;
+        /* a Google suggestion carries no position: ask Google for it now (this also closes the session, so the typing was free) */
+        if(x.placeId){ const sh = S.sheet, tok = sugSession, picked = x.name;
+          gmapsPlace(x.placeId, tok).then(g => { if(!g || S.sheet !== sh || (sh.title || "").trim() !== picked.trim()) return;
+            sh.lat = g.lat; sh.lon = g.lon; sh.placeId = g.placeId; if(g.address) sh.address = g.address; if(g.mapsUrl && !sh.mapsUrl) sh.mapsUrl = g.mapsUrl; }).catch(gmapsFailed); } }
       sugSession = "";   // a pick ends the autocomplete session
       sugPicked = Date.now();
       closeSuggest();
@@ -3503,6 +3629,7 @@ document.addEventListener("pointercancel", endSwipe);
 document.addEventListener("click", e => { if(SW.suppress && e.target.closest(".trow-slide")){ e.preventDefault(); e.stopImmediatePropagation(); SW.suppress = false; } }, true);
 document.addEventListener("keydown", e => { if(e.key === "Escape" && S.sheet){ S.sheet = null; render(); } });
 document.addEventListener("submit", async e => {
+  if(e.target && e.target.dataset && e.target.dataset.form === "gmaps-key"){ e.preventDefault(); const k = findGmapsKey(S.sheet && S.sheet.key); if(!k){ S.sheet.fix = {step:3, text:"ยังไม่ใช่คีย์ Google Maps คีย์ขึ้นต้นด้วย AIza ลองคัดลอกใหม่ในขั้นที่ 3"}; render(); return; } gmapsTry(k); return; }
   if(e.target && e.target.dataset && e.target.dataset.form === "ai-key"){ e.preventDefault(); const k = findAiKey(S.sheet && S.sheet.key); if(!k){ S.sheet.err = "ยังไม่ใช่คีย์ Gemini ลองคัดลอกคีย์จาก Google AI Studio ใหม่"; render(); return; } aiTry(k); return; }
   if(e.target.dataset.form==='travel-leg'){e.preventDefault();await saveTravelLeg();return;}
   if(e.target.dataset.form==='sos'){e.preventDefault();await sosSave();return;}
@@ -3729,6 +3856,16 @@ document.addEventListener("click", async e => {
     case "google-login": { const again = S.needDrive; S.loggingIn = true; S.loginErr = ""; render(); JunbiBackend.signIn(again ? "consent" : undefined); break; }
     case "reconnect": JunbiBackend.signIn(""); break;
     case "ai-setup": S.sheet = {kind:"ai-setup"}; render(); break;
+    case "gmaps-setup": { const back = S.sheet && S.sheet.kind !== "account" && S.sheet.kind !== "gmaps-setup" ? S.sheet : null; S.sheet = {kind:"gmaps-setup", back}; render(); break; }
+    case "gmaps-change": if(S.sheet && S.sheet.kind === "gmaps-setup"){ S.sheet.editing = true; S.sheet.fix = null; render(); } break;
+    case "gmaps-remove": setGmapsOwnKey(""); if(S.sheet) S.sheet.editing = false; render(); toast("เลิกเชื่อม Google Maps แล้ว ค้นหาด้วย OpenStreetMap"); break;
+    case "gmaps-retest": { const k = gmapsOwnKey(); if(k && S.sheet){ S.sheet.editing = true; gmapsTry(k); } break; }
+    case "gmaps-copy-site": try { await navigator.clipboard.writeText(gmapsSite()); toast("คัดลอกแล้ว"); } catch(_){ toast(gmapsSite()); } break;
+    case "gmaps-paste": {
+      let txt = ""; try { txt = await navigator.clipboard.readText(); } catch(_){}
+      const k = findGmapsKey(txt);
+      if(!k){ if(S.sheet){ S.sheet.fix = {step:3, text:"ยังไม่เจอคีย์ในคลิปบอร์ด คัดลอก API key ในขั้นที่ 3 (ขึ้นต้นด้วย AIza) แล้วกดอีกครั้ง หรือวางในช่องด้านล่าง"}; render(); } break; }
+      gmapsTry(k); break; }
     case "ai-change": if(S.sheet && S.sheet.kind === "ai-setup"){ S.sheet.editing = true; render(); } break;
     case "ai-remove": JunbiBackend.setAiKey(""); if(S.sheet) S.sheet.editing = false; render(); toast("เลิกเชื่อม AI แล้ว"); break;
     case "ai-get-key": break;
@@ -3835,7 +3972,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-2026-11-05-a";
+const BUILD = "junbi-2026-11-05-b";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
