@@ -1552,9 +1552,16 @@ async function pull(tripId, force) {
 async function pullAll() {
   const list = await listTrips();
   for (const id of Object.keys(files)) if (!list[id]) { forget(id); }
-  for (const [id, f] of Object.entries(list)) { if (files[id] && files[id].loaded === f.modified && T.trips.has(id)) list[id].loaded = f.modified; }
+  const changed = [];
+  for (const [id, f] of Object.entries(list)) {
+    const old = files[id];
+    if (old && old.loaded === f.modified && T.trips.has(id)) {
+      f.loaded = old.loaded;
+      f.checked = Date.now(); // the fresh file list already checked this trip's version
+    } else changed.push(id);
+  }
   files = list; saveFiles();
-  await Promise.all(Object.keys(files).map(id => pull(id).catch(() => false)));
+  await Promise.all(changed.map(id => pull(id).catch(() => false)));
 }
 function forget(tripId) {
   T.trips.delete(tripId);

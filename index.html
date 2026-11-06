@@ -2889,7 +2889,10 @@ function vSheet(){
       ${s.fromLink && S.trips.length > 1 ? `<label class="fld">ทริป<select id="sh-trip">${S.trips.map(x => `<option value="${esc(x.id)}" ${x.id === S.tripId ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>` : ""}
       ${s.linking ? `<div class="link-wait"><div class="spinner sm" role="status" aria-label="กำลังอ่านลิงก์"></div><span class="muted small">กำลังอ่านลิงก์จาก Google Maps…</span></div>` : ""}
       ${s.linkErr ? `<div class="err" role="alert">${esc(s.linkErr)}</div>` : ""}
-      ${!s.linking && !s.mapsUrl ? `<button type="button" class="cat-add paste-link t-idea" data-act="paste-maps">${ic("pin",18)}วางลิงก์จาก Google Maps</button><p class="muted small" style="margin:-4px 0 0">ใน Google Maps กด แชร์ → คัดลอกลิงก์ แล้วกลับมากดปุ่มนี้ หรือวางในช่องชื่อก็ได้</p>` : ""}
+      ${!s.linking ? `<button type="button" class="cat-add paste-link t-idea" data-act="search-maps">${ic("search",18)}ค้นหาสถานที่ใน Google Maps</button>
+      <label class="fld">ลิงก์สถานที่จาก Google Maps<input id="sh-maps-link" type="url" inputmode="url" autocomplete="off" placeholder="วางลิงก์ที่คัดลอกจาก Google Maps" value="${esc(s.mapsUrl||"")}" data-bind="sheet:mapsUrl"></label>
+      <button type="button" class="cat-add paste-link t-idea" data-act="import-maps">${ic("pin",18)}นำเข้าสถานที่จากลิงก์</button>
+      <p class="muted small" style="margin:-4px 0 0">เลือกสถานที่จริงใน Google Maps → แชร์ → คัดลอกลิงก์ แล้ววางที่นี่</p>` : ""}
       <div class="chips t-idea">${IDEA_KINDS.map(k => `<button type="button" class="${IDEA_TONE[k]}" aria-pressed="${s.ideaKind===k}" data-act="idea-kind" data-m="${esc(k)}">${ic(IDEA_ICON[k],18)}${esc(k)}</button>`).join("")}</div>
       <label class="fld">ชื่อ<input id="sh-title" required maxlength="80" data-suggest="1" autocomplete="off" placeholder="${s.ideaKind==="ร้านอาหาร"?"เช่น Ichiran Shibuya":"เช่น teamLab Planets"}" value="${esc(s.title)}" data-bind="sheet:title"></label>
       <label class="fld">โน้ต<input id="sh-note" maxlength="120" placeholder="เช่น เพื่อนแนะนำ, ต้องจองก่อน" value="${esc(s.note)}" data-bind="sheet:note"></label>
@@ -3632,6 +3635,15 @@ document.addEventListener("click", async e => {
       render(); setTimeout(() => { const i = document.getElementById("sh-title"); i && i.focus(); }, 30); break; }
     case "mode": S.sheet.mode = el.dataset.m; render(); break;
     case "idea-kind": S.sheet.ideaKind = el.dataset.m; render(); break;
+    case "search-maps": {
+      const query = [S.sheet?.title, S.trip?.destination].filter(Boolean).join(' ').trim();
+      const url = 'https://www.google.com/maps/search/?' + new URLSearchParams({api:'1',query:query||S.trip?.name||'สถานที่ท่องเที่ยว'});
+      window.open(url, '_blank', 'noopener'); break; }
+    case "import-maps": {
+      const raw = document.getElementById('sh-maps-link')?.value || S.sheet?.mapsUrl || '';
+      const m = String(raw).match(MAPS_LINK);
+      if(!m){ toast('วางลิงก์ Google Maps ของสถานที่ก่อนนะ'); break; }
+      fillFromLink(m[0]); break; }
     case "paste-maps": {
       let txt = ""; try { txt = await navigator.clipboard.readText(); } catch(_){}
       const m = String(txt || "").match(MAPS_LINK);
