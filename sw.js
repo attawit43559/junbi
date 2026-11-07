@@ -1,9 +1,9 @@
 /* Junbi — keeps the app itself on the phone so it opens without internet.
  * The page: network first (so updates arrive), the saved copy when offline or slow.
  * The app's own scripts: network first too. Fonts, icons and the PDF/viewer libraries: the saved copy straight away, refreshed in the background.
- * Trip data lives in the page's own storage; Google sign-in, Drive, Gemini and weather are never touched here. */
-const CACHE = "junbi-shell-v3";
-const SHELL = ["./", "./index.html", "./plan-export.js", "./backend.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/apple-touch-icon.png", "./icons/icon-512.png", "./icons/logo-wordmark.svg"];
+ * Trip data lives in the page's own storage; the backend (Apps Script), sign-in, Drive and weather are never touched here. */
+const CACHE = "junbi-shell-v4";
+const SHELL = ["./", "./index.html", "./plan-export.js", "./lang-en.js", "./backend.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/apple-touch-icon.png", "./icons/icon-512.png"];
 const KEEP = /^https:\/\/(fonts\.googleapis\.com|fonts\.gstatic\.com|cdnjs\.cloudflare\.com)\//;
 
 self.addEventListener("install", e => {
@@ -36,8 +36,21 @@ function savedFirst(req){
   }));
 }
 
+/* Android: the installed app is in the share menu; what is shared arrives here, is kept for the page, and the page opens */
+async function takeShare(req){
+  const f = await req.formData();
+  const c = await caches.open("junbi-app-share");
+  for(const k of await c.keys()) await c.delete(k);
+  const files = f.getAll("files").filter(x => x && typeof x === "object" && x.size).slice(0, 5);
+  const text = [f.get("title"), f.get("text"), f.get("url")].filter(Boolean).join("\n");
+  await c.put("./__share/meta", new Response(JSON.stringify({text, n: files.length, at: Date.now()}), {headers: {"content-type": "application/json"}}));
+  await Promise.all(files.map((x, i) => c.put("./__share/f" + i, new Response(x, {headers: {"content-type": x.type || "application/octet-stream"}}))));
+  return Response.redirect(new URL("./?share-in=1", self.registration.scope), 303);
+}
+
 self.addEventListener("fetch", e => {
   const req = e.request;
+  if(req.method === "POST" && new URL(req.url).pathname.endsWith("/share-target")){ e.respondWith(takeShare(req).catch(() => Response.redirect(new URL("./?share-in=0", self.registration.scope), 303))); return; }
   if(req.method !== "GET") return;
   const url = new URL(req.url);
   const same = url.origin === self.location.origin;

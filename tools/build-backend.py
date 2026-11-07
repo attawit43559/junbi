@@ -2,9 +2,8 @@
 The trip logic is reused as it is; storage, sign-in, files and AI calls are replaced by
 browser versions: each trip is one JSON file in the user's own Google Drive, the AI key is the user's own."""
 import re, pathlib
-root = pathlib.Path(__file__).resolve().parents[2]
 junbi = pathlib.Path(__file__).resolve().parents[1]
-src = (root / 'my-trip/apps-script/Code.gs').read_text()
+src = (junbi / 'tools/vendor/my-trip-b42487d-Code.gs').read_text()
 lines = src.split('\n')
 # drop the Apps Script HTTP entry points (doGet/doPost/json_)
 start = src.index('const ACTIONS = {')
@@ -33,6 +32,7 @@ def asyncify(text, extra=()):
 
 over = []
 over.append(asyncify(fn('readBooking_')).replace("if (provider === 'claude') text = await callClaude_(props, prompt, files);\n  else if (provider === 'openai') text = await callOpenAI_(props, prompt, files);\n  else ", ''))
+over.append(asyncify(fn('dayTips_')))
 pj = fn('planJob_').replace('const plan = fn(req);', 'const plan = await fn(req);')
 over.append(asyncify(pj))
 pr = asyncify(fn('planReviewRun_'))
