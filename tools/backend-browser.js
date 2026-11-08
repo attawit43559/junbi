@@ -434,6 +434,20 @@ async function travelCompare_(req, ai) {
   return result;
 }
 
+/* where the group sleeps that night (same rule as the app's stayForNight): a stay without a check-out date
+   counts until the next stay's check-in or the trip's last day */
+function nightStay_(items, date) {
+  const valid = d => /^\d{4}-\d{2}-\d{2}$/.test(String(d || ''));
+  const stays = items.filter(i => i.type === 'stay' && valid(i.date));
+  const hit = stays.find(i => valid(i.endDate) && i.date <= date && date < i.endDate); if (hit) return hit;
+  const open = stays.filter(i => !valid(i.endDate) && i.date <= date).sort((a, b) => a.date < b.date ? 1 : -1)[0];
+  if (!open) return null;
+  const nextIn = stays.filter(i => i.date > open.date).map(i => i.date).sort()[0];
+  const trip = open.tripId && find_(TRIPS, open.tripId), t = trip && trip.obj;
+  const last = t && valid(t.startDate) && t.days ? new Date(Date.parse(t.startDate + 'T00:00:00Z') + (t.days - 1) * 864e5).toISOString().slice(0, 10) : '';
+  return (nextIn ? date < nextIn : (!last || date < last)) ? open : null;
+}
+
 /* ---------- actions the app sends that work differently here ---------- */
 ACTIONS.uploadFile = async req => {
   const bin = atob(String(req.data || '')), bytes = new Uint8Array(bin.length);
