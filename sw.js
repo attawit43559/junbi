@@ -2,7 +2,7 @@
  * The page: network first (so updates arrive), the saved copy when offline or slow.
  * The app's own scripts: network first too. Fonts, icons and the PDF/viewer libraries: the saved copy straight away, refreshed in the background.
  * Trip data lives in the page's own storage; Google sign-in, Drive, Gemini and weather are never touched here. */
-const CACHE = "junbi-shell-v6";
+const CACHE = "junbi-shell-v7";
 const SHELL = ["./", "./index.html", "./plan-export.js", "./lang-en.js", "./backend.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/apple-touch-icon.png", "./icons/icon-512.png"];
 const KEEP = /^https:\/\/(fonts\.googleapis\.com|fonts\.gstatic\.com|cdnjs\.cloudflare\.com)\//;
 

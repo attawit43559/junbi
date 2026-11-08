@@ -360,7 +360,7 @@ async function placeGeo_(name, address) {
 }
 /* the link expander: a tiny Cloudflare Worker (tools/link-expander) that asks Google where a short
    maps.app.goo.gl link leads. A web page cannot see that itself. Empty: short links are kept, the name is typed. */
-const LINK_EXPANDER = '';
+const LINK_EXPANDER = 'https://junbi-links.attawit-charoensri.workers.dev';
 const isGoogleMaps_ = u => /^https:\/\/((www|maps)\.)?google\.[a-z.]+\/maps|^https:\/\/maps\.google\.[a-z.]+\//i.test(String(u || ''));
 async function expandLink_(url) {
   if (!LINK_EXPANDER) return '';
