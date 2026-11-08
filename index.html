@@ -2269,21 +2269,21 @@ function vAccount(){
 /* ---------- the guide: what Junbi does, in pictures of the real screens (guide/th, guide/en).
    Shown once on this phone after the first sign-in; the account sheet opens it again. ---------- */
 const GUIDE_KEY = "junbi-guide-seen";   // not junbi-app-*: signing out does not bring it back
-const GUIDE = [
-  ["เข้าสู่ระบบด้วย Google", "ทริปและไฟล์ตั๋วของคุณเก็บในโฟลเดอร์ Junbi ใน Google Drive ของคุณเอง ไม่มีใครอื่นเห็น"],
-  ["สร้างทริป", "กด สร้างทริป ที่หน้าแรก ใส่ชื่อทริป วันไป และวันกลับ ยังไม่รู้วันก็เว้นไว้ก่อนได้"],
-  ["เก็บที่อยากไปจาก Google Maps", "ใน Google Maps กด แชร์ แล้ว คัดลอกลิงก์ จากนั้นในแท็บ ที่สนใจ กด เพิ่ม แล้วกด วางลิงก์ Google Maps ชื่อสถานที่จะขึ้นเอง"],
-  ["จัดลงแต่ละวัน", "ในแท็บ วางแผน เลือกวันจากปฏิทิน แล้วแตะสถานที่ที่จะไปวันนั้น แตะอีกครั้งเพื่อเอาออก"],
-  ["ดูแผนและนำทาง", "หน้าหลักแสดงแผนของวันที่เลือก แตะสถานที่ แล้วกด ดูใน Google Maps เพื่อนำทางไปที่นั่น"],
-  ["เก็บตั๋วและที่พัก", "ในแท็บ ข้อมูลทริป กด เพิ่ม แล้วแนบไฟล์ PDF หรือรูปใบจอง แอปอ่านเที่ยวบินและที่พักให้ ต้องเชื่อม AI ก่อน"],
-  ["เชื่อม AI ฟรี (ไม่บังคับ)", "สร้างคีย์ Gemini ฟรีในบัญชี Google ของคุณ แล้ววางในแอป ใช้อ่านใบจอง แนะนำที่เที่ยว และช่วยตรวจแผน ทำครั้งเดียวประมาณ 1 นาที"],
-  ["ส่งออกแผนและข้อมูลฉุกเฉิน", "ปุ่ม ••• มุมขวาบนของทริป มีส่งออกแผนเป็น PDF หรือรูป และข้อมูลฉุกเฉินของประเทศที่ไป"]
+const GUIDE = [   // [picture in guide/th|en, title, text]
+  [1, "เข้าสู่ระบบด้วย Google", "ทริปและไฟล์ตั๋วของคุณเก็บในโฟลเดอร์ Junbi ใน Google Drive ของคุณเอง ไม่มีใครอื่นเห็น"],
+  [2, "สร้างทริป", "กด สร้างทริป ที่หน้าแรก ใส่ชื่อทริป วันไป และวันกลับ ยังไม่รู้วันก็เว้นไว้ก่อนได้"],
+  [6, "เพิ่มตั๋วเครื่องบินและที่พัก (ถ้ามี)", "เริ่มจากตรงนี้ก่อน: ในแท็บ ข้อมูลทริป กด เพิ่ม แล้วแนบไฟล์ PDF หรือรูปใบจอง แอปอ่านวันบินและวันเข้าพักให้ แผนแต่ละวันจะเริ่มจากที่พักเอง"],
+  [7, "เชื่อม AI ฟรี", "การอ่านใบจองใช้ AI ครั้งแรกแอปจะชวนเชื่อม สร้างคีย์ Gemini ฟรีในบัญชี Google ของคุณแล้ววางในแอป ทำครั้งเดียวประมาณ 1 นาที"],
+  [3, "เก็บที่อยากไปจาก Google Maps", "ใน Google Maps กด แชร์ แล้ว คัดลอกลิงก์ จากนั้นในแท็บ ที่สนใจ กด เพิ่ม แล้วกด วางลิงก์ Google Maps ชื่อสถานที่จะขึ้นเอง"],
+  [4, "จัดลงแต่ละวัน", "ในแท็บ วางแผน เลือกวันจากปฏิทิน แล้วแตะสถานที่ที่จะไปวันนั้น แตะอีกครั้งเพื่อเอาออก"],
+  [5, "ดูแผนและนำทาง", "หน้าหลักแสดงแผนของวันที่เลือก แตะสถานที่ แล้วกด ดูใน Google Maps เพื่อนำทางไปที่นั่น"],
+  [8, "ส่งออกแผนและข้อมูลฉุกเฉิน", "ปุ่ม ••• มุมขวาบนของทริป มีส่งออกแผนเป็น PDF หรือรูป และข้อมูลฉุกเฉินของประเทศที่ไป"]
 ];
 function guideSeen(){ try { return !!localStorage.getItem(GUIDE_KEY); } catch(_){ return true; } }
 function guideOpen(i){ try { localStorage.setItem(GUIDE_KEY, "1"); } catch(_){} S.sheet = {kind:"guide", i:i || 0}; render(); }
-function guideImg(i){ return `guide/${LANG === "en" ? "en" : "th"}/${i + 1}.webp`; }
+function guideImg(i){ return `guide/${LANG === "en" ? "en" : "th"}/${GUIDE[i][0]}.webp`; }
 function vGuide(s){
-  const n = GUIDE.length, i = Math.max(0, Math.min(n - 1, s.i || 0)), [title, text] = GUIDE[i];
+  const n = GUIDE.length, i = Math.max(0, Math.min(n - 1, s.i || 0)), [, title, text] = GUIDE[i];
   if(i + 1 < n){ const pre = new Image(); pre.src = guideImg(i + 1); }
   return `<div class="scrim" data-act="guide-close"><div class="sheet guide" role="dialog" aria-modal="true" aria-label="วิธีใช้ Junbi" data-stop="1">
     <div class="hd"><h2>วิธีใช้ Junbi</h2><button class="round" data-act="guide-close" aria-label="ปิด">${ic("close")}</button></div>
@@ -4244,7 +4244,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-b42487d-6";
+const BUILD = "junbi-b42487d-7";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
