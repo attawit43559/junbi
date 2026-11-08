@@ -16,8 +16,7 @@ Junbi จึงได้ชื่อและที่อยู่ของส�
    - ถ้า Cloudflare ถามชื่อ subdomain ของบัญชี (`<ชื่อ>.workers.dev`) ตั้งชื่ออะไรก็ได้
 4. กด **Edit code** → ลบโค้ดเดิมทั้งหมด → วางโค้ดจากไฟล์ `worker.js` ในโฟลเดอร์นี้ → กด **Deploy**
 5. คัดลอกที่อยู่ของ worker ที่แสดงอยู่ เช่น `https://junbi-links.<ชื่อ>.workers.dev`
-6. ใส่ที่อยู่นี้ใน `tools/backend-browser.js` ที่บรรทัด `const LINK_EXPANDER = '';`
-   แล้วรัน `python3 tools/build-backend.py` (หรือส่งที่อยู่ให้ Claude ทำให้)
+6. ใส่ที่อยู่นี้ใน `backend.js` ที่บรรทัด `const LINK_EXPANDER = '...';`
 
 ติดตั้งแล้วที่ `https://junbi-links.attawit-charoensri.workers.dev` (8 พ.ย. 2026)
 
