@@ -1796,14 +1796,26 @@ function goToGoogle(prompt) {
   if (auth && auth.user && auth.user.email) q.set('login_hint', auth.user.email);
   location.assign('https://accounts.google.com/o/oauth2/v2/auth?' + q);
 }
+/* a friend's shared trip file: Google's own page shows just that file and lets this app open it (drive.file) */
+function pickShared(fileIds) {
+  const state = Math.random().toString(36).slice(2);
+  try { sessionStorage.setItem('junbi-oauth-state', state); } catch (_) {}
+  LS.set('junbi-oauth-state', state); LS.set('junbi-picking', '1');
+  const q = new URLSearchParams({ client_id: CLIENT_ID, redirect_uri: here(), response_type: 'token', scope: 'https://www.googleapis.com/auth/drive.file',
+    state, prompt: 'consent', trigger_onepick: 'true', file_ids: fileIds.join(','), allow_multiple: 'true' });
+  if (auth && auth.user && auth.user.email) q.set('login_hint', auth.user.email);
+  location.assign('https://accounts.google.com/o/oauth2/v2/auth?' + q);
+}
 /* the page opens again with the answer in its address: keep the key, clean the address */
 async function finishSignIn() {
   if (!/access_token=|error=/.test(location.hash)) return null;
   const p = new URLSearchParams(location.hash.slice(1));
+  const picking = LS.get('junbi-picking') === '1'; LS.set('junbi-picking', null);
   history.replaceState(null, '', location.pathname + location.search);
   let want = null; try { want = sessionStorage.getItem('junbi-oauth-state'); sessionStorage.removeItem('junbi-oauth-state'); } catch (_) {}
   want = want || LS.get('junbi-oauth-state'); LS.set('junbi-oauth-state', null);
   if (p.get('error')) {
+    if (picking) { LS.set('junbi-picked', 'error:' + p.get('error')); return null; }
     try { sessionStorage.setItem('junbi-auth-error', p.get('error')); } catch (_) {}
     return null;
   }
@@ -1812,6 +1824,13 @@ async function finishSignIn() {
   // Google lets people untick Drive on its page: without it nothing can be saved, so ask again
   if (!/drive\.file/.test(p.get('scope') || '')) { try { sessionStorage.setItem('junbi-auth-error', 'drive_scope_missing'); } catch (_) {} return null; }
   const token = p.get('access_token'), expires = Date.now() + (Number(p.get('expires_in')) || 3600) * 1000;
+  // back from choosing a shared trip file: same person, a fresh Drive key; the chosen files are noted for the app
+  if (picking && auth && auth.user) {
+    const picked = String(p.get('picked_file_ids') || new URLSearchParams(location.search).get('picked_file_ids') || '');
+    LS.set('junbi-picked', picked || '-');
+    auth = { token, expires, user: auth.user }; LS.set(AUTH_KEY, JSON.stringify(auth));
+    return auth.user;
+  }
   const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + token } });
   const info = res.ok ? await res.json().catch(() => null) : null;
   if (!info || !info.sub) { try { sessionStorage.setItem('junbi-auth-error', 'userinfo_' + res.status); } catch (_) {} return null; }
@@ -2182,6 +2201,9 @@ ACTIONS.uploadFile = async req => {
   const m = multipart({ name: String(req.name || 'booking').slice(0, 120), parents: [await root()], appProperties: { junbi: 'file' } }, new Blob([bytes]), req.mime || 'application/octet-stream');
   say('drive-upload', { kb: Math.round(bytes.length / 1024) });
   const r = await drive('/files?uploadType=multipart&fields=id', { method: 'POST', headers: m.headers, body: m.body }, UPLOAD);
+  // a shared trip: the others can open this booking too
+  const t = req.tripId && find_(TRIPS, String(req.tripId));
+  if (t) for (const e of otherEmails_(t.obj, req.me)) await shareWith_(r.id, e, 'reader').catch(() => {});
   return { id: r.id, url: 'https://drive.google.com/file/d/' + r.id + '/view' };
 };
 /* Match Android-shared pictures and PDFs with this user's Gemini key, then keep them in their Drive. */
@@ -2235,6 +2257,76 @@ ACTIONS.shareKeyOff = () => true;
 ACTIONS.shareTrip = () => false;
 ACTIONS.logout = () => true;
 
+/* ---------- trips shared through Google Drive ----------
+   The trip lives in one Drive file of the person who made it. Inviting shares that file with a friend's Gmail
+   (Drive sends them an e-mail with the Junbi link); the friend opens it once through Google's file chooser,
+   then both phones read and write the same file. Booking files are shared to read. */
+const emailOk = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+async function shareWith_(fileId, email, role, note) {
+  const qs = note ? 'sendNotificationEmail=true&emailMessage=' + q(note) : 'sendNotificationEmail=false';
+  return drive('/files/' + fileId + '/permissions?' + qs + '&fields=id', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role, type: 'user', emailAddress: email }) });
+}
+const tripFiles_ = tripId => [...new Set(rows_(ITEMS).filter(r => r.tripId === tripId).flatMap(r => [...(r.obj.fileIds || []), ...(r.obj.fileId ? [r.obj.fileId] : [])]))];
+const otherEmails_ = (trip, me) => Object.entries(trip.emails || {}).filter(([uid, e]) => uid !== me && emailOk(e)).map(([, e]) => e);
+ACTIONS.inviteMember = async req => {
+  const tripId = String(req.tripId || ''); mustBeMember_(tripId, req.me);
+  const email = String(req.email || '').trim().toLowerCase();
+  if (!emailOk(email)) throw fail('bad_email');
+  if (auth.user.email && email === auth.user.email.toLowerCase()) throw fail('own_email');
+  if (!files[tripId]) { dirty.add(tripId); await pushDirty(); }
+  const fileId = files[tripId].id, trip = find_(TRIPS, tripId).obj;
+  const link = String(req.link || '') + '.' + fileId;
+  const note = (auth.user.name || 'เพื่อน') + ' ชวนคุณวางแผนทริป "' + String(trip.name || '').slice(0, 60) + '" ใน Junbi\n'
+    + 'เปิดลิงก์นี้ แล้วล็อกอินด้วยอีเมลนี้: ' + link + '\n(ไม่ต้องเปิดไฟล์ด้านล่าง Junbi จะเปิดให้เอง)';
+  await shareWith_(fileId, email, 'writer', note);
+  for (const fid of tripFiles_(tripId)) await shareWith_(fid, email, 'reader').catch(() => {});
+  trip.driveFile = fileId;
+  if (auth.user.email) trip.emails = Object.assign({}, trip.emails || {}, { [req.me]: auth.user.email.toLowerCase() });
+  trip.invited = [...new Set([...(trip.invited || []), email])].slice(-30);
+  upsert_(TRIPS, trip.id, '', trip);
+  return { trip, link };
+};
+/* the friend's side: the file they chose on Google's page belongs to this trip */
+ACTIONS.openShared = async req => {
+  const tripId = String(req.tripId || ''), fileId = String(req.fileId || '');
+  if (!/^[A-Za-z0-9]{6}$/.test(tripId) || !/^[-\w]{10,}$/.test(fileId)) throw fail('not_found');
+  if (T.trips.has(tripId)) return true;
+  files[tripId] = { id: fileId }; saveFiles();
+  let ok = false;
+  try { ok = await pull(tripId, true); } catch (e) { if (e.code !== 'not_found' && e.code !== 'drive_denied') throw e; }
+  if (!ok || !T.trips.has(tripId)) { delete files[tripId]; saveFiles(); forget(tripId); return false; }
+  return true;
+};
+/* who joined: their Gmail is kept with the trip, so booking files added later can be shared with them */
+const joinOnce = ACTIONS.joinTrip;
+ACTIONS.joinTrip = req => {
+  const trip = joinOnce(req); if (!trip) return trip;
+  if (auth.user.email) { trip.emails = Object.assign({}, trip.emails || {}, { [req.me]: auth.user.email.toLowerCase() }); upsert_(TRIPS, trip.id, '', trip); }
+  return trip;
+};
+/* taken out of the trip: their access to the trip file goes too */
+const removeOnce = ACTIONS.removeMember;
+ACTIONS.removeMember = async req => {
+  const before = find_(TRIPS, String(req.id)), email = before && (before.obj.emails || {})[String(req.uid || '')];
+  const trip = removeOnce(req);
+  if (trip && email) {
+    if (trip.emails) { delete trip.emails[String(req.uid)]; }
+    trip.invited = (trip.invited || []).filter(e => e !== email);
+    upsert_(TRIPS, trip.id, '', trip);
+    const f = files[trip.id];
+    if (f) {
+      const r = await drive('/files/' + f.id + '/permissions?fields=permissions(id,emailAddress)').catch(() => null);
+      const hit = r && (r.permissions || []).find(x => String(x.emailAddress || '').toLowerCase() === email);
+      if (hit) await drive('/files/' + f.id + '/permissions/' + hit.id, { method: 'DELETE' }).catch(() => {});
+    }
+  }
+  return trip;
+};
+/* leaving: the trip is forgotten on this phone (the owner's file stays theirs) */
+const leaveOnce = ACTIONS.leaveTrip;
+ACTIONS.leaveTrip = req => { const trip = leaveOnce(req); if (trip && trip.emails) { delete trip.emails[req.me]; upsert_(TRIPS, trip.id, '', trip); } return trip; };
+
 /* which trip an action touches, so its file is read fresh first */
 function tripFor(action, b) {
   if (action === 'deleteItem') { const r = T.items.get(String(b.id)); return r ? r.tripId : ''; }
@@ -2243,7 +2335,8 @@ function tripFor(action, b) {
   if (['getTrip', 'joinTrip', 'leaveTrip', 'removeMember', 'deleteTrip'].indexOf(action) >= 0) return String(b.id || '');
   return '';
 }
-const WRITES = new Set(['saveTrip', 'saveItems', 'deleteItem', 'deleteTrip', 'leaveTrip', 'joinTrip', 'removeMember', 'replacePlan', 'shareFileLocal']);
+const WRITES = new Set(['saveTrip', 'saveItems', 'deleteItem', 'deleteTrip', 'leaveTrip', 'joinTrip', 'removeMember', 'replacePlan', 'shareFileLocal', 'inviteMember', 'openShared']);
+const AGAIN = new Set(['saveTrip', 'saveItems', 'deleteItem', 'joinTrip', 'leaveTrip', 'replacePlan']);   // safe to apply a second time
 let chain = Promise.resolve();   // one action at a time, like the lock on the server
 
 async function run(action, body) {
@@ -2258,7 +2351,12 @@ async function run(action, body) {
     if (action === 'getTrip' && id && !T.trips.has(id)) return { trip: null, items: [] };
   }
   dirty.clear();
-  const out = await fn(req);
+  let out = await fn(req);
+  const id = tripFor(action, req), f = id && files[id], t = id && T.trips.get(id);
+  if (dirty.size && f && f.loaded && t && (t.obj.memberIds || []).length > 1 && AGAIN.has(action)) {
+    const meta = await drive('/files/' + f.id + '?fields=modifiedTime');
+    if (meta.modifiedTime !== f.loaded) { await pull(id, true); dirty.clear(); out = await fn(req); }
+  }
   if (dirty.size) await pushDirty();
   return clone(out);
 }
@@ -2275,6 +2373,9 @@ window.JunbiBackend = {
   signIn: prompt => goToGoogle(prompt === undefined ? 'select_account' : prompt),
   forgetDrive() { if (auth) { auth.token = ''; auth.expires = 0; LS.set(AUTH_KEY, JSON.stringify(auth)); } },
   refresh: () => goToGoogle('none'),
+  pickShared,
+  /* what came back from Google's file chooser: null (nothing pending), '' (nothing chosen), the ids, or 'error:…' */
+  takePicked() { const v = LS.get('junbi-picked'); LS.set('junbi-picked', null); return v == null ? null : v === '-' ? '' : v; },
   finishSignIn,
   signOut,
   /* signing out on purpose: nothing of this account stays on the phone (AI key and its notes, models, place cache) */
