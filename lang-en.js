@@ -823,5 +823,9 @@ window.MYTRIP_EN = {
 "เชื่อม AI ฟรี (ไม่บังคับ)": "Connect free AI (optional)",
 "สร้างคีย์ Gemini ฟรีในบัญชี Google ของคุณ แล้ววางในแอป ใช้อ่านใบจอง แนะนำที่เที่ยว และช่วยตรวจแผน ทำครั้งเดียวประมาณ 1 นาที": "Create a free Gemini key in your Google account and paste it in the app. It reads bookings, suggests places and checks your plan. It takes about a minute, once.",
 "ส่งออกแผนและข้อมูลฉุกเฉิน": "Export the plan, emergency info",
-"ปุ่ม ••• มุมขวาบนของทริป มีส่งออกแผนเป็น PDF หรือรูป และข้อมูลฉุกเฉินของประเทศที่ไป": "The ••• button at the top right of a trip exports the plan as a PDF or pictures, and has emergency information for the country."
+"ปุ่ม ••• มุมขวาบนของทริป มีส่งออกแผนเป็น PDF หรือรูป และข้อมูลฉุกเฉินของประเทศที่ไป": "The ••• button at the top right of a trip exports the plan as a PDF or pictures, and has emergency information for the country.",
+"เพิ่มตั๋วเครื่องบินและที่พัก (ถ้ามี)": "Add flight tickets and stays (if you have them)",
+"เริ่มจากตรงนี้ก่อน: ในแท็บ ข้อมูลทริป กด เพิ่ม แล้วแนบไฟล์ PDF หรือรูปใบจอง แอปอ่านวันบินและวันเข้าพักให้ แผนแต่ละวันจะเริ่มจากที่พักเอง": "Start here: in the Trip info tab tap Add and attach a booking PDF or picture. The app reads the flight and stay dates, and each day's plan then starts from your hotel.",
+"เชื่อม AI ฟรี": "Connect free AI",
+"การอ่านใบจองใช้ AI ครั้งแรกแอปจะชวนเชื่อม สร้างคีย์ Gemini ฟรีในบัญชี Google ของคุณแล้ววางในแอป ทำครั้งเดียวประมาณ 1 นาที": "Reading bookings uses AI, so the first time the app asks you to connect it. Create a free Gemini key in your Google account and paste it in the app. It takes about a minute, once."
 };
