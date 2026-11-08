@@ -348,6 +348,7 @@ html.kb .dock{bottom:calc(6px + var(--kb,0px))}
 .share-how summary{cursor:pointer;font-size:14px;font-weight:500;color:var(--idea);padding:4px 0}
 .share-how ol{margin:8px 0;padding-left:20px;font-size:13.5px;line-height:1.6}
 .share-act{display:flex;gap:4px;justify-content:flex-end}
+.link-kept{display:flex;gap:8px;align-items:center;margin:0;color:var(--muted)}.link-kept span{flex:1;min-width:0}.link-kept a{flex:none;font-weight:600}
 .link-wait{display:flex;align-items:center;gap:10px;background:var(--tile);border-radius:14px;padding:10px 12px}
 .spinner.sm{width:20px;height:20px;border-width:3px}
 .paste-link{text-decoration:none;align-self:flex-start;display:inline-flex;align-items:center;gap:6px;margin-top:-6px;color:var(--idea);font-size:14px}
@@ -864,7 +865,8 @@ function mapEndpoint(name,record){
   const it=record||S.items.find(i=>['place','stay','idea'].includes(i.type)&&i.title===name);
   const origin=it&&S.items.find(i=>i.id===(it.data||{}).fromIdea);
   const d={...(origin?.data||{}),...(it?.data||{})};
-  const valid=d.lat!=null&&d.lon!=null&&d.lat!==''&&d.lon!==''&&Number.isFinite(+d.lat)&&Number.isFinite(+d.lon)&&Math.abs(+d.lat)<=90&&Math.abs(+d.lon)<=180;
+  /* a position goes to Google Maps only when it is Google's own pin; any other (OpenStreetMap, AI) is a guess, so Google searches the name */
+  const valid=d.geoFrom==='google'&&d.lat!=null&&d.lon!=null&&d.lat!==''&&d.lon!==''&&Number.isFinite(+d.lat)&&Number.isFinite(+d.lon)&&Math.abs(+d.lat)<=90&&Math.abs(+d.lon)<=180;
   return {query:valid?`${+d.lat},${+d.lon}`:[name,d.address].filter(Boolean).join(' '),placeId:d.placeId||''};
 }
 function routeLink(it){
@@ -2533,7 +2535,7 @@ async function planIdea(){
   S.planAdding=it.id;render();
   try{
     await store.addItem(t.id, {type:"place", date:s.planDate, time:s.planTime||"", title:it.title, sub:it.sub||"",
-      data:{address:d.address||"", lat:d.lat, lon:d.lon, placeId:d.placeId||"", kind:d.kind||"", fromIdea:it.id}, createdBy:S.me, createdAt:Date.now(), source:"idea"});
+      data:{address:d.address||"", lat:d.lat, lon:d.lon, geoFrom:d.geoFrom||"", placeId:d.placeId||"", mapsUrl:d.mapsUrl||"", kind:d.kind||"", fromIdea:it.id}, createdBy:S.me, createdAt:Date.now(), source:"idea"});
     if(S.trip?.id===t.id){const i=tripDates(t).indexOf(s.planDate);if(i>=0)S.day=i;if(S.sheet===s)S.sheet=null;}
     toast("เพิ่มลงแผน " + dShort(s.planDate) + " แล้ว");
   } catch(err){ fail(err); }finally{S.planAdding=null;render();}
@@ -2564,7 +2566,7 @@ async function togglePlannerIdea(id){
   PLAN_TOGGLES.add(key);
   try{
     if(current.length){for(const it of current)await store.deleteItem(t.id,it.id);}
-    else{const d=idea.data||{};await store.addItem(t.id,{type:'place',date,time:'',title:idea.title,sub:idea.sub||'',data:{address:d.address||'',lat:d.lat,lon:d.lon,placeId:d.placeId||'',mapsUrl:d.mapsUrl||'',kind:d.kind||'',fromIdea:id},createdBy:S.me,createdAt:Date.now(),source:'idea'});}
+    else{const d=idea.data||{};await store.addItem(t.id,{type:'place',date,time:'',title:idea.title,sub:idea.sub||'',data:{address:d.address||'',lat:d.lat,lon:d.lon,geoFrom:d.geoFrom||'',placeId:d.placeId||'',mapsUrl:d.mapsUrl||'',kind:d.kind||'',fromIdea:id},createdBy:S.me,createdAt:Date.now(),source:'idea'});}
   }catch(e){fail(e);}finally{PLAN_TOGGLES.delete(key);render();}
 }
 function fitPlannerPanel(){
@@ -2653,7 +2655,7 @@ async function addDayIdeas(){
   const selected=s.selected.map(id=>S.items.find(i=>i.type==='idea'&&i.id===id&&!plannedFrom(id))).filter(Boolean);
   s.busy=true;render();
   try{
-    for(const it of selected){const d=it.data||{};await store.addItem(t.id,{type:'place',date:s.date,time:'',title:it.title,sub:it.sub||'',data:{address:d.address||'',lat:d.lat,lon:d.lon,placeId:d.placeId||'',kind:d.kind||'',fromIdea:it.id},createdBy:S.me,createdAt:Date.now(),source:'idea'});}
+    for(const it of selected){const d=it.data||{};await store.addItem(t.id,{type:'place',date:s.date,time:'',title:it.title,sub:it.sub||'',data:{address:d.address||'',lat:d.lat,lon:d.lon,geoFrom:d.geoFrom||'',placeId:d.placeId||'',mapsUrl:d.mapsUrl||'',kind:d.kind||'',fromIdea:it.id},createdBy:S.me,createdAt:Date.now(),source:'idea'});}
     if(S.trip?.id===t.id){const at=tripDates(t).indexOf(s.date);if(at>=0)S.day=at;if(S.sheet===s)S.sheet=null;}
     toast('เพิ่มสถานที่แล้ว');
   }catch(e){fail(e);}finally{s.busy=false;render();}
@@ -3096,22 +3098,22 @@ async function gmapsPlace(query){
     return {placeId:p.id||'',name:(p.displayName&&p.displayName.text)||'',address:p.formattedAddress||'',lat:p.location.latitude,lon:p.location.longitude,mapsUrl:p.googleMapsUri||'',kind:kindFromTypes([p.primaryType,...(p.types||[])])};
   }catch(_){return undefined;}
 }
-/* fill the open "add to สนใจ" sheet from a Google Maps link */
+/* fill the open "add to สนใจ" sheet from a Google Maps link. The link is kept whatever happens: it is what opens
+   the exact place in Google Maps. The name (and the pin, when the link has one) come from the link itself. */
 async function fillFromLink(url){
   const s = S.sheet; if(!s || s.kind !== "idea") return;
+  s.mapsUrl = url; s.lat = null; s.lon = null; s.geoFrom = ""; s.placeId = "";
   s.linking = true; s.linkErr = ""; render();
   try{
     const r = await api("resolveMapLink", {url});
     if(S.sheet !== s) return;
-    const label=mapNameParts(r.name);
-    s.title = label.name || s.title; s.ideaKind = r.kind || s.ideaKind; s.lat = r.lat; s.lon = r.lon; s.address = r.address || label.address; s.originalMapsName = r.originalName || r.name || ""; s.mapsUrl = url;
-    const g = await gmapsPlace([s.title, s.address].filter(Boolean).join(", "));
-    if(S.sheet !== s) return;
-    if(g){ s.ideaKind = g.kind || s.ideaKind; s.placeId = g.placeId; if(s.lat == null){ s.lat = g.lat; s.lon = g.lon; } if(!s.address) s.address = g.address; }
-    else s.placeId = await gmapsFindId(r.name, r.lat, r.lon);
+    const label = mapNameParts(r.name);
+    s.title = label.name || s.title; s.ideaKind = r.kind || s.ideaKind; s.address = r.address || label.address; s.originalMapsName = r.originalName || r.name || "";
+    if(r.geoFrom === "google"){ s.lat = r.lat; s.lon = r.lon; s.geoFrom = "google"; }
   } catch(e){
     if(S.sheet !== s) return;
-    s.linkErr = e && e.code === "offline" ? "ไม่มีอินเทอร์เน็ต ลองใหม่อีกครั้ง" : "อ่านลิงก์นี้ไม่ได้ ลองพิมพ์ชื่อเองแทนได้เลย";
+    s.linkErr = e && e.code === "offline" ? "ไม่มีอินเทอร์เน็ต พิมพ์ชื่อสถานที่เองได้เลย ลิงก์ Google Maps เก็บไว้ให้แล้ว"
+      : "อ่านชื่อจากลิงก์ไม่ได้ พิมพ์ชื่อสถานที่เองได้เลย ลิงก์ Google Maps เก็บไว้ให้แล้ว";
   }
   s.linking = false; render();
 }
@@ -3176,7 +3178,8 @@ function vSheet(){
       ${s.fromLink && S.trips.length > 1 ? `<label class="fld">ทริป<select id="sh-trip">${S.trips.map(x => `<option value="${esc(x.id)}" ${x.id === S.tripId ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>` : ""}
       ${s.linking ? `<div class="link-wait"><div class="spinner sm" role="status" aria-label="กำลังอ่านลิงก์"></div><span class="muted small">กำลังอ่านลิงก์จาก Google Maps…</span></div>` : ""}
       ${s.linkErr ? `<div class="err" role="alert">${esc(s.linkErr)}</div>` : ""}
-      <button type="button" class="pill-btn" data-act="paste-maps">${ic("pin",16)}วางลิงก์ Google Maps</button>
+      ${s.mapsUrl && !s.linking ? `<p class="link-kept small">${ic("check",16)}<span>เก็บลิงก์ Google Maps ไว้แล้ว กดเปิดจะไปที่เดียวกับที่คัดลอกมา</span><a href="${esc(s.mapsUrl)}" target="_blank" rel="noopener">ลองเปิด</a></p>` : ""}
+      <button type="button" class="pill-btn" data-act="paste-maps">${ic("pin",16)}${s.mapsUrl ? "เปลี่ยนลิงก์ Google Maps" : "วางลิงก์ Google Maps"}</button>
       <div class="chips t-idea">${IDEA_KINDS.map(k => `<button type="button" class="${IDEA_TONE[k]}" aria-pressed="${s.ideaKind===k}" data-act="idea-kind" data-m="${esc(k)}">${ic(IDEA_ICON[k],18)}${esc(k)}</button>`).join("")}</div>
       <label class="fld">ชื่อ<input id="sh-title" required maxlength="80" data-suggest="1" autocomplete="off" placeholder="${s.ideaKind==="ร้านอาหาร"?"เช่น Ichiran Shibuya":"เช่น teamLab Planets"}" value="${esc(s.title)}" data-bind="sheet:title"></label>
       <label class="fld">โน้ต<input id="sh-note" maxlength="120" placeholder="เช่น เพื่อนแนะนำ, ต้องจองก่อน" value="${esc(s.note)}" data-bind="sheet:note"></label>
@@ -3528,7 +3531,7 @@ function showSuggest(input, list){
       const x = list[+li.dataset.i];
       input.value = x.name;
       input.dispatchEvent(new Event("input", {bubbles:true}));
-      if(S.sheet && input.id === "sh-title"){ S.sheet.address = x.area; S.sheet.lat = x.lat; S.sheet.lon = x.lon; S.sheet.placeId = x.placeId; }
+      if(S.sheet && input.id === "sh-title"){ S.sheet.address = x.area; S.sheet.lat = x.lat; S.sheet.lon = x.lon; S.sheet.placeId = x.placeId; S.sheet.geoFrom = x.placeId ? "google" : ""; }
       sugSession = "";   // a pick ends the autocomplete session
       sugPicked = Date.now();
       closeSuggest();
@@ -3895,7 +3898,7 @@ document.addEventListener("submit", async e => {
     if(s.kind === "idea"){
       try{
         await store.addItem(t.id, {type:"idea", date:"", time:"", title:s.title.trim(), sub:s.note.trim(),
-          data:{kind:s.ideaKind||"ที่เที่ยว", address:s.address||"", originalMapsName:s.originalMapsName||"", lat:s.lat, lon:s.lon, placeId:s.placeId||"", mapsUrl:s.mapsUrl||""}, createdBy:S.me, createdAt:Date.now(), source:"manual"});
+          data:{kind:s.ideaKind||"ที่เที่ยว", address:s.address||"", originalMapsName:s.originalMapsName||"", lat:s.lat, lon:s.lon, geoFrom:s.geoFrom||"", placeId:s.placeId||"", mapsUrl:s.mapsUrl||""}, createdBy:S.me, createdAt:Date.now(), source:"manual"});
         S.sheet = null; S.catTab = "idea"; render(); toast("จดไว้แล้ว");
       } catch(err){ fail(err); }
       return;
@@ -4191,7 +4194,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-b42487d-2";
+const BUILD = "junbi-b42487d-3";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
