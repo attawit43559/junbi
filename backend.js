@@ -2276,7 +2276,7 @@ ACTIONS.inviteMember = async req => {
   if (auth.user.email && email === auth.user.email.toLowerCase()) throw fail('own_email');
   if (!files[tripId]) { dirty.add(tripId); await pushDirty(); }
   const fileId = files[tripId].id, trip = find_(TRIPS, tripId).obj;
-  const link = String(req.link || '') + '.' + fileId;
+  const link = String(req.link || '') + '.' + [fileId, ...tripFiles_(tripId).slice(0, 30)].join('.');   // the tickets come along: one Google step opens them all
   const note = (auth.user.name || 'เพื่อน') + ' ชวนคุณวางแผนทริป "' + String(trip.name || '').slice(0, 60) + '" ใน Junbi\n'
     + 'เปิดลิงก์นี้ แล้วล็อกอินด้วยอีเมลนี้: ' + link + '\n(ไม่ต้องเปิดไฟล์ด้านล่าง Junbi จะเปิดให้เอง)';
   await shareWith_(fileId, email, 'writer', note);

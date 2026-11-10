@@ -867,4 +867,11 @@ window.MYTRIP_EN = {
 "เปิดไฟล์ตั๋วในแอปได้แล้ว": "Tickets now open in the app",
 "ยังไม่ได้เลือกไฟล์ ลองอีกครั้ง": "No file was chosen. Try again.",
 "Google ยังไม่ให้เปิดไฟล์ ลองอีกครั้ง": "Google didn't allow it. Try again.",
+"ทริปนี้อยู่ใน Google Drive ของเพื่อน กดปุ่มด้านล่าง หน้าของ Google จะขึ้นไฟล์ทริปและไฟล์ตั๋ว ให้": "This trip is in your friend's Google Drive. Tap the button below; Google shows the trip file and the tickets:",
+"เลือกทุกไฟล์": "select all of them",
+"ครั้งเดียวก็เห็นตั๋วในแอปด้วย": "Once, and the tickets open in the app too.",
+"เจ้าของทริปกด ✕ ที่ชื่อเพื่อน เพื่อเอาออกจากทริป": "As the trip owner, tap ✕ next to a name to remove them from the trip",
+"ออกจากทริปนี้?": "Leave this trip?",
+"ทริปจะหายจากเครื่องคุณ และเปิดไฟล์ทริปไม่ได้อีก ถ้าจะกลับมา ต้องให้เจ้าของทริปชวนใหม่": "The trip disappears from your phone and you can't open its file any more. To come back, the owner has to invite you again.",
+"ออกจากทริปนี้": "Leave this trip",
 };
