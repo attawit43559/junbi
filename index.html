@@ -1104,13 +1104,14 @@ const inviteLink = (id, file) => location.origin + location.pathname + "?openExt
 
 /* ---------- navigation ---------- */
 function go(view, extra={}){ Object.assign(S, extra); S.view = view; S.sheet = null; S.dockHidden = false; render(); window.scrollTo(0,0); }
+function cleanupAccess(){}   // flag holder: the owner is removing Drive access of people who left
 function openTrip(id, view="trip"){
   if(S.tripId !== id){
     unsubTrip && unsubTrip(); unsubItems && unsubItems();
     S.tripId = id; S.trip = null; S.items = []; S.day = 0;
     S.catTab = "";
     S.tripMissing = false;
-    unsubTrip = store.watchTrip(id, t => { S.trip = t; S.tripMissing = t === null; if(t){ ensureProfiles(t.memberIds||[]); const n = tripDates(t).indexOf(today()); if(S.day===0 && n>0) S.day = n; } softRender(); });
+    unsubTrip = store.watchTrip(id, t => { S.trip = t; S.tripMissing = t === null; if(t){ ensureProfiles(t.memberIds||[]); if(t.ownerId === S.me && (t.revoke||[]).length && navigator.onLine && !cleanupAccess.busy){ cleanupAccess.busy = true; api("cleanupAccess", {tripId:t.id}).catch(() => {}).finally(() => { cleanupAccess.busy = false; }); } const n = tripDates(t).indexOf(today()); if(S.day===0 && n>0) S.day = n; } softRender(); });
     unsubItems = store.watchItems(id, items => { S.items = items; softRender(); docsPrefetchSoon(); localizeSoon(); checkShared().catch(() => {}); clearTimeout(wxLoad.t); wxLoad.t = setTimeout(wxLoad, 800); });
   } else refreshTrip(id);   // reopening the same trip still fetches who joined since
   try {
@@ -1514,8 +1515,9 @@ async function docShow(){
   let rec = await docGet(id);
   if(!rec){
     if(!navigator.onLine || !CONNECTED){ s.state = "missing"; render(); return; }
-    try { rec = await docFetch(S.trip.id, id); } catch(_){ rec = null; }
-    if(!rec){ if(S.sheet === s){ s.state = "error"; render(); } return; }
+    let why = "";
+    try { rec = await docFetch(S.trip.id, id); } catch(e){ rec = null; why = e && e.code || ""; }
+    if(!rec){ if(S.sheet === s){ s.state = "error"; s.why = why; render(); } return; }
   }
   if(S.sheet !== s || s.files[s.i] !== id) return;
   DOCS.urls.forEach(u => URL.revokeObjectURL(u)); DOCS.urls = [];
@@ -1580,6 +1582,7 @@ function vDoc(s){
   const it = S.items.find(i => i.id === s.itemId) || {title:""};
   const body = s.state === "ready" ? "" : s.state === "missing"
     ? `<div class="doc-msg">${ic("file",28)}<p>ไฟล์นี้ยังไม่ได้เก็บไว้ในเครื่อง</p><p class="muted small">ต่อเน็ตแล้วเปิดอีกครั้ง แอปจะเก็บไว้ให้ดูตอนออฟไลน์</p></div>`
+    : s.state === "error" && s.why === "not_found" && (S.trip?.memberIds || []).length > 1 ? `<div class="doc-msg">${ic("file",28)}<p>ไฟล์นี้อยู่ใน Google Drive ของผู้ร่วมทริป<br><small class="muted">ให้ Junbi เปิดไฟล์ตั๋วของทริปนี้ได้ ทำครั้งเดียว ในหน้าของ Google ให้เลือกไฟล์ทั้งหมด แล้วกด Select</small></p><button type="button" class="soft-btn" data-act="doc-allow">${ic("file",18)}ให้ Junbi เปิดไฟล์ตั๋ว</button><a class="pill-btn" href="https://drive.google.com/file/d/${encodeURIComponent(s.files[s.i] || "")}/view" target="_blank" rel="noopener">เปิดใน Google Drive ${ic("ext",16)}</a></div>`
     : s.state === "error" ? `<div class="doc-msg">${ic("file",28)}<p>เปิดไฟล์ในแอปไม่ได้</p><button type="button" class="soft-btn" data-act="doc-file" data-n="${s.i}">ลองอีกครั้ง</button><a class="soft-btn" href="https://drive.google.com/file/d/${encodeURIComponent(s.files[s.i] || "")}/view" target="_blank" rel="noopener">เปิดใน Google Drive ${ic("ext",16)}</a></div>`
     : `<div class="doc-msg"><div class="spinner" role="status" aria-label="กำลังเปิด"></div></div>`;
   return `<div class="doc-sheet" role="dialog" aria-modal="true" aria-label="ใบจอง ${esc(it.title)}">
@@ -3256,6 +3259,7 @@ async function saveReview(auto){
 
 /* ---------- join ---------- */
 const PENDING_JOIN = "junbi-pending-join";
+const pendingDocs = () => { try { const v = JSON.parse(localStorage.getItem("junbi-pending-docs") || "null"); return v && v.tripId ? v : null; } catch(_){ return null; } };
 const keepJoin = v => { try { v ? localStorage.setItem(PENDING_JOIN, v) : localStorage.removeItem(PENDING_JOIN); } catch(_){} };
 async function startJoin(code, file, picked){
   code = String(code||"").trim().toUpperCase(); file = String(file || "");
@@ -3884,6 +3888,11 @@ document.addEventListener("click", async e => {
     case "sos-doctor": S.sheet = {kind:"sos-doctor"}; render(); break;
     case "sos-edit": sosOpen(true); break;
     case "sos-view": sosOpen(false); break;
+    case "doc-allow": { const sh = S.sheet; if(!sh || sh.kind !== "doc" || !S.trip) break;
+      if(!navigator.onLine){ toast("ต้องต่ออินเทอร์เน็ตก่อน"); break; }
+      const ids = [...new Set([sh.files[sh.i], ...S.items.flatMap(itemFiles)])].filter(id => id && !DOCS.have.has(id)).slice(0, 40);
+      try { localStorage.setItem("junbi-pending-docs", JSON.stringify({tripId:S.trip.id, itemId:sh.itemId, n:sh.i})); } catch(_){}
+      JunbiBackend.pickShared(ids); break; }
     case "doc-file": if(S.sheet && S.sheet.kind === "doc"){ S.sheet.i = Number(el.dataset.n) || 0; S.sheet.state = "loading"; render(); docShow(); } break;
     case "sheet-cancel": S.sheet = null; render(); break;
     case "rm-ask": S.rmAsk = el.dataset.id; render(); break;
@@ -4024,7 +4033,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-share-1";
+const BUILD = "junbi-share-2";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
@@ -4081,6 +4090,10 @@ async function checkUpdate(){
   if(m) startJoin(m[1], m[2] || "", picked === null ? undefined : String(picked).startsWith("error:") ? "denied" : picked);
   else if(shareInNow || sessionStorage.getItem("junbi-pending-share-in")==="1"){sessionStorage.removeItem("junbi-pending-share-in");go("home");shareIn();}
   else if(addUrl){ go("home"); waitTrips(() => addFromLink(addUrl)); }
+  else if(picked !== null && pendingDocs()){ const pd = pendingDocs(); try { localStorage.removeItem("junbi-pending-docs"); } catch(_){}
+    openTrip(pd.tripId);
+    if(String(picked).startsWith("error:") || !picked) toast(picked ? "Google ยังไม่ให้เปิดไฟล์ ลองอีกครั้ง" : "ยังไม่ได้เลือกไฟล์ ลองอีกครั้ง");
+    else { toast("เปิดไฟล์ตั๋วในแอปได้แล้ว"); const tryOpen = (k = 0) => { if(S.items.some(i => i.id === pd.itemId)) docOpen(pd.itemId, pd.n); else if(k < 20) setTimeout(() => tryOpen(k + 1), 300); }; tryOpen(); } }
   else go("home");
 })();
 })();

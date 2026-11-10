@@ -861,4 +861,10 @@ window.MYTRIP_EN = {
 "ไม่พบทริปจากลิงก์นี้ ขอให้เพื่อนส่งคำชวนใหม่จากหน้า \"ชวนผู้ร่วมทริป\"": "No trip found for this link. Ask your friend for a new invite from \"Invite people\".",
 "เปิดใน Google Drive": "Open in Google Drive",
 "ต้องต่ออินเทอร์เน็ตก่อน": "Connect to the internet first",
+"ไฟล์นี้อยู่ใน Google Drive ของผู้ร่วมทริป": "This file is in a trip member's Google Drive",
+"ให้ Junbi เปิดไฟล์ตั๋วของทริปนี้ได้ ทำครั้งเดียว ในหน้าของ Google ให้เลือกไฟล์ทั้งหมด แล้วกด Select": "Let Junbi open this trip's tickets, once: on Google's page select all the files, then tap Select",
+"ให้ Junbi เปิดไฟล์ตั๋ว": "Let Junbi open tickets",
+"เปิดไฟล์ตั๋วในแอปได้แล้ว": "Tickets now open in the app",
+"ยังไม่ได้เลือกไฟล์ ลองอีกครั้ง": "No file was chosen. Try again.",
+"Google ยังไม่ให้เปิดไฟล์ ลองอีกครั้ง": "Google didn't allow it. Try again.",
 };
