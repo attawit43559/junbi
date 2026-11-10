@@ -2325,7 +2325,40 @@ ACTIONS.removeMember = async req => {
 };
 /* leaving: the trip is forgotten on this phone (the owner's file stays theirs) */
 const leaveOnce = ACTIONS.leaveTrip;
-ACTIONS.leaveTrip = req => { const trip = leaveOnce(req); if (trip && trip.emails) { delete trip.emails[req.me]; upsert_(TRIPS, trip.id, '', trip); } return trip; };
+ACTIONS.leaveTrip = async req => {
+  const tripId = String(req.id || req.tripId || ''), f = files[tripId];
+  const before = find_(TRIPS, tripId), email = (before && (before.obj.emails || {})[req.me]) || (auth.user.email || '').toLowerCase();
+  const trip = leaveOnce(req);
+  if (trip && email && trip.ownerId !== req.me) {
+    if (trip.emails) delete trip.emails[req.me];
+    trip.invited = (trip.invited || []).filter(e => e !== email);
+    trip.revoke = [...new Set([...(trip.revoke || []), email])].slice(-30);   // the owner's phone takes the access away
+    upsert_(TRIPS, trip.id, '', trip);
+    if (dirty.size) await pushDirty();
+    dirty.clear();
+    // this phone forgets the trip; also try to drop our own access right away (Drive may refuse, the owner then does it)
+    if (f) {
+      const r = await drive('/files/' + f.id + '/permissions?fields=permissions(id,emailAddress)').catch(() => null);
+      const hit = r && (r.permissions || []).find(x => String(x.emailAddress || '').toLowerCase() === email);
+      if (hit) await drive('/files/' + f.id + '/permissions/' + hit.id, { method: 'DELETE' }).catch(() => {});
+      delete files[tripId]; saveFiles(); forget(tripId);
+    }
+  }
+  return trip;
+};
+/* the owner's phone: take Drive access away from people who left the trip */
+ACTIONS.cleanupAccess = async req => {
+  const tripId = String(req.tripId || ''), t = find_(TRIPS, tripId);
+  if (!t || t.obj.ownerId !== req.me || !(t.obj.revoke || []).length) return false;
+  const gone = new Set(t.obj.revoke), f = files[tripId];
+  if (f) {
+    const r = await drive('/files/' + f.id + '/permissions?fields=permissions(id,emailAddress,role)');
+    for (const x of r.permissions || []) if (x.role !== 'owner' && gone.has(String(x.emailAddress || '').toLowerCase()))
+      await drive('/files/' + f.id + '/permissions/' + x.id, { method: 'DELETE' }).catch(() => {});
+  }
+  t.obj.revoke = []; upsert_(TRIPS, tripId, '', t.obj);
+  return true;
+};
 
 /* which trip an action touches, so its file is read fresh first */
 function tripFor(action, b) {
@@ -2335,8 +2368,8 @@ function tripFor(action, b) {
   if (['getTrip', 'joinTrip', 'leaveTrip', 'removeMember', 'deleteTrip'].indexOf(action) >= 0) return String(b.id || '');
   return '';
 }
-const WRITES = new Set(['saveTrip', 'saveItems', 'deleteItem', 'deleteTrip', 'leaveTrip', 'joinTrip', 'removeMember', 'replacePlan', 'shareFileLocal', 'inviteMember', 'openShared']);
-const AGAIN = new Set(['saveTrip', 'saveItems', 'deleteItem', 'joinTrip', 'leaveTrip', 'replacePlan']);   // safe to apply a second time
+const WRITES = new Set(['saveTrip', 'saveItems', 'deleteItem', 'deleteTrip', 'leaveTrip', 'joinTrip', 'removeMember', 'replacePlan', 'shareFileLocal', 'inviteMember', 'openShared', 'cleanupAccess']);
+const AGAIN = new Set(['saveTrip', 'saveItems', 'deleteItem', 'joinTrip', 'replacePlan']);   // safe to apply a second time
 let chain = Promise.resolve();   // one action at a time, like the lock on the server
 
 async function run(action, body) {
