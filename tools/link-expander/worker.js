@@ -98,6 +98,13 @@ async function invites(request, env, cors, path) {
     await write(key, list.filter(x => x.tripId !== tripId));
     return json({ ok: true }, 200, cors);
   }
+  if (path === '/invites/cancel') {          // the one who invited takes it back
+    const to = clean(b.to, 200).toLowerCase();
+    if (!EMAIL.test(to)) return json({ error: 'bad_email' }, 400, cors);
+    const key = await box(to), list = await read(key);
+    await write(key, list.filter(x => !(x.tripId === tripId && x.fromEmail === me)));
+    return json({ ok: true }, 200, cors);
+  }
   if (path === '/invites') {                 // leave a note for a friend
     const to = clean(b.to, 200).toLowerCase(), spec = clean(b.spec, 1500);
     if (!EMAIL.test(to) || to === me) return json({ error: 'bad_email' }, 400, cors);

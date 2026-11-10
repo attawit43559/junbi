@@ -1259,21 +1259,23 @@ function vInvite(){
     <div class="top"><button class="round" data-act="trip" aria-label="กลับไปที่ทริป">${ic("back")}</button><h1>ชวนผู้ร่วมทริป</h1></div>
     <form class="card stack" data-form="invite" style="gap:12px" novalidate>
       <h2 style="font-size:18px;font-weight:500">ชวนด้วยอีเมล Gmail ของเพื่อน</h2>
-      <p class="muted small">Google Drive จะส่งอีเมลที่มีลิงก์เข้าทริปไปให้เพื่อน เพื่อนกดลิงก์แล้วล็อกอิน Junbi ด้วยอีเมลนั้น ก็วางแผนด้วยกันได้เลย</p>
       <label class="fld" for="inv-email">อีเมลเพื่อน<input id="inv-email" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="name@gmail.com" value="${esc(v.email)}" data-bind="invite:email"></label>
       ${v.err ? `<p class="err small" role="alert">${esc(v.err)}</p>` : ""}
       <button class="btn primary" ${v.busy ? "disabled" : ""}>${v.busy ? "กำลังส่งคำชวน…" : "ส่งคำชวน"}</button>
     </form>
     ${waiting.length ? `<section class="stack">
       <div class="sec-h"><h2>รอเพื่อนเข้าร่วม</h2><span class="muted small">${waiting.length} คน</span></div>
-      <ul class="members">${waiting.map(e => `<li><span class="av" aria-hidden="true">${ic("users",16)}</span><span class="grow inv-mail">${esc(e)}</span><span class="muted small">ส่งคำชวนแล้ว</span></li>`).join("")}</ul>
-      ${link ? `<p class="muted small">เพื่อนไม่เห็นอีเมล? ส่งลิงก์นี้ให้ทางแชตได้ (ใช้ได้เฉพาะอีเมลที่ชวนไว้)</p>
-      <div class="link-box"><input id="inv-link" readonly value="${esc(link)}" aria-label="ลิงก์เข้าร่วมทริป"><button type="button" data-act="copy" data-text="${esc(link)}">คัดลอก</button></div>` : ""}
+      <ul class="members">${waiting.map(e => S.cancelAsk === e
+        ? `<li class="rm-ask"><span class="av" aria-hidden="true">${ic("users",16)}</span><span class="grow inv-mail">ลบคำชวน <b>${esc(e)}</b>?</span>
+          <button class="pill-btn" style="background:var(--tile)" data-act="inv-cancel-no">เก็บไว้</button><button class="pill-btn danger" data-act="inv-cancel" data-email="${esc(e)}" ${S.cancelBusy ? "disabled" : ""}>${S.cancelBusy ? "กำลังลบ…" : "ลบคำชวน"}</button></li>`
+        : `<li><span class="av" aria-hidden="true">${ic("users",16)}</span><span class="grow inv-mail">${esc(e)}</span><span class="muted small">ส่งคำชวนแล้ว</span>
+          <button class="round sm" data-act="inv-cancel-ask" data-email="${esc(e)}" aria-label="ลบคำชวน ${esc(e)}">${ic("close",16)}</button></li>`).join("")}</ul>
+      ${link ? `<div class="link-box"><input id="inv-link" readonly value="${esc(link)}" aria-label="ลิงก์เข้าร่วมทริป"><button type="button" data-act="copy" data-text="${esc(link)}">คัดลอก</button></div>` : ""}
     </section>` : ""}
     <section class="stack">
       <div class="sec-h"><h2>ผู้ร่วมทริป</h2><span class="muted small">${ids.length} คน</span></div>
       <ul class="members">${ids.map(id => memberRow(t, id)).join("")}</ul>
-      ${t.ownerId === S.me ? `<p class="muted small">เจ้าของทริปกด ✕ ที่ชื่อเพื่อน เพื่อเอาออกจากทริป</p>`
+      ${t.ownerId === S.me ? ""
         : S.leaveAsk === t.id ? `<div class="err stack" style="gap:10px" role="alert"><span><b>ออกจากทริปนี้?</b> ทริปจะหายจากเครื่องคุณ และเปิดไฟล์ทริปไม่ได้อีก ถ้าจะกลับมา ต้องให้เจ้าของทริปชวนใหม่</span>
           <div class="grid2"><button class="pill-btn" style="justify-content:center" data-act="leave-cancel">ยกเลิก</button><button class="pill-btn" style="justify-content:center;background:var(--danger);color:var(--surface)" data-act="trip-leave" data-id="${esc(t.id)}">ออกจากทริป</button></div></div>`
         : `<button class="link-btn danger-link" data-act="leave-ask">${ic("leave",18)}ออกจากทริปนี้</button>`}
@@ -3297,7 +3299,7 @@ async function saveReview(auto){
 const PENDING_JOIN = "junbi-pending-join";
 const pendingDocs = () => { try { const v = JSON.parse(localStorage.getItem("junbi-pending-docs") || "null"); return v && v.tripId ? v : null; } catch(_){ return null; } };
 const keepJoin = v => { try { v ? localStorage.setItem(PENDING_JOIN, v) : localStorage.removeItem(PENDING_JOIN); } catch(_){} };
-async function startJoin(code, spec, picked){
+async function startJoin(code, spec, picked, direct){
   code = String(code||"").trim().toUpperCase(); spec = String(spec || "");
   const file = spec.split(".")[0];
   if(!/^[A-Z0-9]{6}$/.test(code)){ toast("รหัสทริปมี 6 ตัวอักษร"); return; }
@@ -3306,12 +3308,15 @@ async function startJoin(code, spec, picked){
     let t = await store.fetchTrip(code);
     if(!t && file && await api("openShared", {tripId:code, fileId:file}).catch(() => false)) t = await store.fetchTrip(code);
     if(!t){
+      if(file && direct && picked === undefined && navigator.onLine){ keepJoin(code + "." + spec); JunbiBackend.pickShared(spec.split(".")); return; }   // accepted on the home page: straight to Google
       if(file){ S.joinPick = {code, file, spec, failed: picked === undefined ? "" : picked === "" ? "none" : "denied"}; render(); return; }
       keepJoin(null); S.joinMissing = true; render(); return;
     }
     keepJoin(null);
     if((t.memberIds||[]).includes(S.me)){ C.trips[t.id] = t; if(!C.myTrips.includes(t.id)) C.myTrips.unshift(t.id); emit(); openTrip(t.id); return; }
-    S.joinTrip = t; render();
+    S.joinTrip = t;
+    if(file) return confirmJoin();   // they already said yes (invite card or invite link): straight in
+    render();
   } catch(e){ S.joinMissing = true; S.joinErr = e && e.code; render(); }
 }
 async function confirmJoin(){
@@ -3988,7 +3993,20 @@ document.addEventListener("click", async e => {
     case "menu-invite": openTrip(el.dataset.id, "invite"); break;
     case "trip-del-ask": S.delAsk = el.dataset.key; S.swipeOpen = el.dataset.key; render(); break;
     case "leave-ask": S.leaveAsk = S.tripId; render(); break;
-    case "invite-yes": { const x = (S.invites || []).find(v => v.tripId === el.dataset.id); if(x) startJoin(x.tripId, x.spec); break; }
+    case "inv-cancel-ask": S.cancelAsk = el.dataset.email; render(); break;
+    case "inv-cancel-no": S.cancelAsk = null; render(); break;
+    case "inv-cancel": { const email = el.dataset.email, t = S.trip; if(!t || S.cancelBusy) break;
+      if(!navigator.onLine){ toast("ต้องต่ออินเทอร์เน็ตก่อน"); break; }
+      S.cancelBusy = true; render();
+      try {
+        const r = await api("cancelInvite", {tripId:t.id, email});
+        if(r && r.trip) C.trips[t.id] = Object.assign(C.trips[t.id] || {}, {invited:r.trip.invited});
+        JunbiBackend.inboxCancel(t.id, email).catch(() => {});
+        S.cancelAsk = null; emit(); toast("ลบคำชวนแล้ว");
+      } catch(e){ fail(e); }
+      finally { S.cancelBusy = false; render(); }
+      break; }
+    case "invite-yes": { const x = (S.invites || []).find(v => v.tripId === el.dataset.id); if(x) startJoin(x.tripId, x.spec, undefined, true); break; }
     case "invite-no": { const id = el.dataset.id; S.invites = (S.invites || []).filter(v => v.tripId !== id); render(); JunbiBackend.inboxRemove(id).catch(() => {}); toast("ซ่อนคำชวนแล้ว"); break; }
     case "leave-cancel": S.leaveAsk = null; render(); break;
     case "trip-delete": case "trip-leave": {
@@ -4075,7 +4093,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-inbox-1";
+const BUILD = "junbi-inbox-2";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
