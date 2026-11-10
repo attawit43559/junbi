@@ -353,6 +353,11 @@ html.kb .dock{bottom:calc(6px + var(--kb,0px))}
 .members .av{width:38px;height:38px;border:0}
 .members .round.sm{width:36px;height:36px;background:var(--tile);color:var(--muted)}
 .danger-link{display:inline-flex;align-items:center;gap:6px;color:var(--danger);font-size:14px;font-weight:600;padding:8px 0}
+.invite-card{display:flex;align-items:center;gap:12px;padding:14px 14px 14px 16px;flex-wrap:wrap}
+.invite-card .grow{min-width:0;flex:1 1 150px;overflow-wrap:anywhere}
+.inv-ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--tile);flex:none}
+.inv-btns{display:flex;gap:8px;margin-left:auto}
+.inv-btns .pill-btn{background:var(--tile)}.inv-btns .primary-pill{background:var(--ink);color:var(--bg)}
 .members .inv-mail{min-width:0;overflow-wrap:anywhere;font-size:14px}.members .av .ic{color:var(--muted)}
 .err.small{padding:10px 12px;font-size:13px;margin:0}
 .members .rm-ask{gap:8px;flex-wrap:wrap;padding:8px 0}
@@ -1105,7 +1110,8 @@ const inviteLink = (id, file, tickets) => location.origin + location.pathname + 
 const tripTickets = () => [...new Set(S.items.flatMap(itemFiles))].filter(x => /^[-\w]{10,}$/.test(x)).slice(0, 30);
 
 /* ---------- navigation ---------- */
-function go(view, extra={}){ Object.assign(S, extra); S.view = view; S.sheet = null; S.dockHidden = false; render(); window.scrollTo(0,0); }
+function go(view, extra={}){ Object.assign(S, extra); S.view = view; S.sheet = null; S.dockHidden = false; render(); window.scrollTo(0,0); if(view === "home") setTimeout(() => loadInvites(), 0); }
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible" && S.view === "home") loadInvites(); });
 function cleanupAccess(){}   // flag holder: the owner is removing Drive access of people who left
 function openTrip(id, view="trip"){
   if(S.tripId !== id){
@@ -1135,6 +1141,27 @@ function swipeWrap(t, inner, cls){
       : `<button class="sw-btn sw-del" data-act="trip-del-ask" data-key="${esc(key)}" aria-label="${owner ? "ลบ" : "ออกจาก"}ทริป ${esc(t.name)}">${ic(owner ? "trash" : "leave",18)}</button>`}</div>
     <div class="trow-slide">${inner}</div></div>`;
 }
+/* invites that wait in the mailbox for this e-mail (shown on the home page) */
+function invitesBox(){
+  const list = (S.invites || []).filter(x => !S.trips.some(t => t.id === x.tripId));
+  if(!list.length) return "";
+  return `<section class="stack invites" style="gap:10px"><div class="sec-h"><h2>คำชวนเข้าทริป</h2></div>
+    ${list.map(x => `<div class="card invite-card"><span class="inv-ic" aria-hidden="true">${ic("users",22)}</span>
+      <span class="grow"><b>${esc(x.name || "ทริปจากเพื่อน")}</b><br><span class="muted small">${esc(x.from || x.fromEmail || "เพื่อน")} ชวนคุณร่วมวางแผน</span></span>
+      <span class="inv-btns"><button class="pill-btn" data-act="invite-no" data-id="${esc(x.tripId)}">ไม่สนใจ</button><button class="pill-btn primary-pill" data-act="invite-yes" data-id="${esc(x.tripId)}">เข้าร่วม</button></span></div>`).join("")}
+  </section>`;
+}
+let invitesAt = 0;
+function loadInvites(force){
+  if(!S.token || !navigator.onLine || (!force && Date.now() - invitesAt < 60000)) return;
+  invitesAt = Date.now();
+  JunbiBackend.inboxList().then(list => {
+    const mine = new Set((C.myTrips || []).concat(S.trips.map(t => t.id)));
+    list.filter(x => mine.has(x.tripId)).forEach(x => JunbiBackend.inboxRemove(x.tripId).catch(() => {}));   // already joined
+    S.invites = list.filter(x => !mine.has(x.tripId));
+    if(S.view === "home") render();
+  }).catch(() => {});
+}
 function vHome(){
   const t0 = today();
   const endOf = t => validD(t.startDate) ? addDays(t.startDate,(t.days||1)-1) : t0;
@@ -1154,6 +1181,7 @@ function vHome(){
     <span class="grow"><span class="t-name">${esc(t.name)}</span><br><span class="muted small">${esc(rangeLabel(t))}</span></span>${ic("chev")}</button>`, "small");
   return `<main class="screen">
     <header class="home-top"><h1>ทริปของฉัน</h1><span style="display:flex;gap:8px;align-items:center"><button class="new-btn" data-act="new">${ic("plus",18)}สร้างทริป</button><button class="me-btn" data-act="account" aria-label="บัญชี ${esc(S.myName)}">${S.user && S.user.picture ? `<img src="${esc(S.user.picture)}" alt="" referrerpolicy="no-referrer">` : esc((S.myName||"?").slice(0,1))}</button></span></header>
+    ${invitesBox()}
     ${!S.tripsReady ? `<p class="muted">กำลังโหลดทริป…</p>` :
       S.trips.length === 0 ? `<div class="card empty">${MOUNTAINS}
         <p class="muted">ยังไม่มีทริป</p></div>` :
@@ -1263,6 +1291,8 @@ async function sendInvite(){
     await flush();
     const r = await api("inviteMember", {tripId:t.id, email, link:inviteLink(t.id)});
     if(r && r.trip) C.trips[t.id] = Object.assign(C.trips[t.id] || {}, {driveFile:r.trip.driveFile, invited:r.trip.invited, emails:r.trip.emails});
+    const spec = r && r.link ? String(r.link).split("#join-")[1].split(".").slice(1).join(".") : "";
+    if(spec) JunbiBackend.inboxSend({to:email, tripId:t.id, spec, name:t.name || "", from:(S.user && S.user.name) || ""}).catch(() => {});
     v.email = ""; emit(); toast("ส่งคำชวนไปที่ " + email + " แล้ว");
   } catch(e){
     v.err = ({bad_email:"อีเมลนี้ไม่ถูกต้อง", own_email:"นี่คืออีเมลของคุณเอง ใส่อีเมลของเพื่อนนะ", offline:"ต้องต่ออินเทอร์เน็ตก่อนส่งคำชวน", drive_denied:"Google Drive ไม่ยอมแชร์ให้อีเมลนี้ ลองใช้อีเมล Gmail ของเพื่อน"})[e && e.code] || "ส่งคำชวนไม่สำเร็จ ลองอีกครั้ง";
@@ -3289,6 +3319,7 @@ async function confirmJoin(){
   try{
     await store.joinTrip(t.id);
     S.joinCode = ""; try { history.replaceState(null, "", location.pathname); } catch(_){}
+    S.invites = (S.invites || []).filter(v => v.tripId !== t.id); JunbiBackend.inboxRemove(t.id).catch(() => {});
     openTrip(t.id); toast("เข้าร่วมทริปแล้ว");
   } catch(e){ fail(e); }
 }
@@ -3957,6 +3988,8 @@ document.addEventListener("click", async e => {
     case "menu-invite": openTrip(el.dataset.id, "invite"); break;
     case "trip-del-ask": S.delAsk = el.dataset.key; S.swipeOpen = el.dataset.key; render(); break;
     case "leave-ask": S.leaveAsk = S.tripId; render(); break;
+    case "invite-yes": { const x = (S.invites || []).find(v => v.tripId === el.dataset.id); if(x) startJoin(x.tripId, x.spec); break; }
+    case "invite-no": { const id = el.dataset.id; S.invites = (S.invites || []).filter(v => v.tripId !== id); render(); JunbiBackend.inboxRemove(id).catch(() => {}); toast("ซ่อนคำชวนแล้ว"); break; }
     case "leave-cancel": S.leaveAsk = null; render(); break;
     case "trip-delete": case "trip-leave": {
       const id = (S.sheet && S.sheet.id) || el.dataset.id;
@@ -4042,7 +4075,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-share-3";
+const BUILD = "junbi-inbox-1";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
