@@ -879,4 +879,9 @@ window.MYTRIP_EN = {
 "ไม่สนใจ": "Not now",
 "ซ่อนคำชวนแล้ว": "Invite hidden",
 "ทริปจากเพื่อน": "A friend's trip",
+"ลบคำชวน": "Remove invite",
+"เก็บไว้": "Keep",
+"กำลังลบ…": "Removing…",
+"ลบคำชวนแล้ว": "Invite removed",
+"ลบคำชวน {0}": "Remove invite {0}",
 };

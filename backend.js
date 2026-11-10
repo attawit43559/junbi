@@ -2296,6 +2296,21 @@ ACTIONS.inviteMember = async req => {
   upsert_(TRIPS, trip.id, '', trip);
   return { trip, link };
 };
+/* the invite is taken back: their access to the trip file and its tickets goes */
+ACTIONS.cancelInvite = async req => {
+  const tripId = String(req.tripId || ''); mustBeMember_(tripId, req.me);
+  const email = String(req.email || '').trim().toLowerCase(), t = find_(TRIPS, tripId).obj;
+  if (Object.values(t.emails || {}).includes(email)) throw fail('already_joined');
+  const f = files[tripId];
+  for (const fid of [f && f.id, ...tripFiles_(tripId)].filter(Boolean)) {
+    const r = await drive('/files/' + fid + '/permissions?fields=permissions(id,emailAddress,role)').catch(() => null);
+    const hit = r && (r.permissions || []).find(x => x.role !== 'owner' && String(x.emailAddress || '').toLowerCase() === email);
+    if (hit) await drive('/files/' + fid + '/permissions/' + hit.id, { method: 'DELETE' }).catch(() => {});
+  }
+  t.invited = (t.invited || []).filter(e => e !== email);
+  upsert_(TRIPS, tripId, '', t);
+  return { trip: t };
+};
 /* the friend's side: the file they chose on Google's page belongs to this trip */
 ACTIONS.openShared = async req => {
   const tripId = String(req.tripId || ''), fileId = String(req.fileId || '');
@@ -2377,7 +2392,7 @@ function tripFor(action, b) {
   if (['getTrip', 'joinTrip', 'leaveTrip', 'removeMember', 'deleteTrip'].indexOf(action) >= 0) return String(b.id || '');
   return '';
 }
-const WRITES = new Set(['saveTrip', 'saveItems', 'deleteItem', 'deleteTrip', 'leaveTrip', 'joinTrip', 'removeMember', 'replacePlan', 'shareFileLocal', 'inviteMember', 'openShared', 'cleanupAccess']);
+const WRITES = new Set(['saveTrip', 'saveItems', 'deleteItem', 'deleteTrip', 'leaveTrip', 'joinTrip', 'removeMember', 'replacePlan', 'shareFileLocal', 'inviteMember', 'openShared', 'cleanupAccess', 'cancelInvite']);
 const AGAIN = new Set(['saveTrip', 'saveItems', 'deleteItem', 'joinTrip', 'replacePlan']);   // safe to apply a second time
 let chain = Promise.resolve();   // one action at a time, like the lock on the server
 
@@ -2419,6 +2434,7 @@ window.JunbiBackend = {
   inboxList: () => inbox_('/invites').then(r => (r && r.invites) || []),
   inboxSend: note => inbox_('/invites', note),
   inboxRemove: tripId => inbox_('/invites/remove', { tripId }),
+  inboxCancel: (tripId, to) => inbox_('/invites/cancel', { tripId, to }),
   /* what came back from Google's file chooser: null (nothing pending), '' (nothing chosen), the ids, or 'error:…' */
   takePicked() { const v = LS.get('junbi-picked'); LS.set('junbi-picked', null); return v == null ? null : v === '-' ? '' : v; },
   finishSignIn,
