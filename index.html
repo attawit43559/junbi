@@ -352,6 +352,7 @@ html.kb .dock{bottom:calc(6px + var(--kb,0px))}
 .members li+li{border-top:1px solid var(--line)}
 .members .av{width:38px;height:38px;border:0}
 .members .round.sm{width:36px;height:36px;background:var(--tile);color:var(--muted)}
+.danger-link{display:inline-flex;align-items:center;gap:6px;color:var(--danger);font-size:14px;font-weight:600;padding:8px 0}
 .members .inv-mail{min-width:0;overflow-wrap:anywhere;font-size:14px}.members .av .ic{color:var(--muted)}
 .err.small{padding:10px 12px;font-size:13px;margin:0}
 .members .rm-ask{gap:8px;flex-wrap:wrap;padding:8px 0}
@@ -1100,7 +1101,8 @@ function avatars(ids, max=4){
   const shown = ids.slice(0, max);
   return `<span class="avatars" aria-hidden="true">${shown.map(id => `<span class="av ${id===S.me?"me":""}">${esc(trText(nameOf(id)).slice(0,1))}</span>`).join("")}</span>`;
 }
-const inviteLink = (id, file) => location.origin + location.pathname + "?openExternalBrowser=1#join-" + id + (file ? "." + file : "");
+const inviteLink = (id, file, tickets) => location.origin + location.pathname + "?openExternalBrowser=1#join-" + id + (file ? "." + [file, ...(tickets || [])].join(".") : "");
+const tripTickets = () => [...new Set(S.items.flatMap(itemFiles))].filter(x => /^[-\w]{10,}$/.test(x)).slice(0, 30);
 
 /* ---------- navigation ---------- */
 function go(view, extra={}){ Object.assign(S, extra); S.view = view; S.sheet = null; S.dockHidden = false; render(); window.scrollTo(0,0); }
@@ -1224,7 +1226,7 @@ function vInvite(){
   const v = S.invite && S.invite.tripId === t.id ? S.invite : (S.invite = {tripId:t.id, email:"", busy:false, err:""});
   const joined = new Set(Object.values(t.emails || {}));
   const waiting = (t.invited || []).filter(e => !joined.has(e));
-  const link = t.driveFile ? inviteLink(t.id, t.driveFile) : "";
+  const link = t.driveFile ? inviteLink(t.id, t.driveFile, tripTickets()) : "";
   return `<main class="screen">
     <div class="top"><button class="round" data-act="trip" aria-label="กลับไปที่ทริป">${ic("back")}</button><h1>ชวนผู้ร่วมทริป</h1></div>
     <form class="card stack" data-form="invite" style="gap:12px" novalidate>
@@ -1243,6 +1245,10 @@ function vInvite(){
     <section class="stack">
       <div class="sec-h"><h2>ผู้ร่วมทริป</h2><span class="muted small">${ids.length} คน</span></div>
       <ul class="members">${ids.map(id => memberRow(t, id)).join("")}</ul>
+      ${t.ownerId === S.me ? `<p class="muted small">เจ้าของทริปกด ✕ ที่ชื่อเพื่อน เพื่อเอาออกจากทริป</p>`
+        : S.leaveAsk === t.id ? `<div class="err stack" style="gap:10px" role="alert"><span><b>ออกจากทริปนี้?</b> ทริปจะหายจากเครื่องคุณ และเปิดไฟล์ทริปไม่ได้อีก ถ้าจะกลับมา ต้องให้เจ้าของทริปชวนใหม่</span>
+          <div class="grid2"><button class="pill-btn" style="justify-content:center" data-act="leave-cancel">ยกเลิก</button><button class="pill-btn" style="justify-content:center;background:var(--danger);color:var(--surface)" data-act="trip-leave" data-id="${esc(t.id)}">ออกจากทริป</button></div></div>`
+        : `<button class="link-btn danger-link" data-act="leave-ask">${ic("leave",18)}ออกจากทริปนี้</button>`}
     </section>
     <button class="btn primary" data-act="trip">ไปที่ทริป ${ic("chev")}</button>
   </main>`;
@@ -2250,7 +2256,7 @@ function vJoin(){
     <div class="top"><button class="round" data-act="home" aria-label="กลับ">${ic("back")}</button><h1>คำชวนเข้าทริป</h1></div>
     <section class="card stack" style="gap:12px">
       <h2 style="font-size:18px;font-weight:500">เปิดทริปที่เพื่อนแชร์มา</h2>
-      <p class="small">ทริปนี้อยู่ใน Google Drive ของเพื่อน กดปุ่มด้านล่าง หน้าของ Google จะขึ้นไฟล์ทริปให้ <b>เลือกไฟล์</b> แล้วกด <b>Select</b> (เลือก)</p>
+      <p class="small">ทริปนี้อยู่ใน Google Drive ของเพื่อน กดปุ่มด้านล่าง หน้าของ Google จะขึ้นไฟล์ทริปและไฟล์ตั๋ว ให้ <b>เลือกทุกไฟล์</b> แล้วกด <b>Select</b> (เลือก) ครั้งเดียวก็เห็นตั๋วในแอปด้วย</p>
       <p class="muted small">ล็อกอินอยู่ด้วย ${esc((S.user && S.user.email) || "")} ต้องเป็นอีเมลเดียวกับที่เพื่อนชวน</p>
       ${pk.failed ? `<p class="err small" role="alert">${pk.failed === "none" ? "ยังไม่ได้เลือกไฟล์ทริป ลองอีกครั้ง" : "ยังเปิดทริปนี้ไม่ได้ ตรวจว่าเพื่อนชวนอีเมลนี้ หรือขอให้เพื่อนส่งคำชวนใหม่"}</p>` : ""}
       <button class="btn primary" data-act="join-pick">เปิดไฟล์ทริปจาก Google Drive</button>
@@ -3261,15 +3267,16 @@ async function saveReview(auto){
 const PENDING_JOIN = "junbi-pending-join";
 const pendingDocs = () => { try { const v = JSON.parse(localStorage.getItem("junbi-pending-docs") || "null"); return v && v.tripId ? v : null; } catch(_){ return null; } };
 const keepJoin = v => { try { v ? localStorage.setItem(PENDING_JOIN, v) : localStorage.removeItem(PENDING_JOIN); } catch(_){} };
-async function startJoin(code, file, picked){
-  code = String(code||"").trim().toUpperCase(); file = String(file || "");
+async function startJoin(code, spec, picked){
+  code = String(code||"").trim().toUpperCase(); spec = String(spec || "");
+  const file = spec.split(".")[0];
   if(!/^[A-Z0-9]{6}$/.test(code)){ toast("รหัสทริปมี 6 ตัวอักษร"); return; }
   S.joinTrip = null; S.joinMissing = false; S.joinPick = null; go("join");
   try{
     let t = await store.fetchTrip(code);
     if(!t && file && await api("openShared", {tripId:code, fileId:file}).catch(() => false)) t = await store.fetchTrip(code);
     if(!t){
-      if(file){ S.joinPick = {code, file, failed: picked === undefined ? "" : picked === "" ? "none" : "denied"}; render(); return; }
+      if(file){ S.joinPick = {code, file, spec, failed: picked === undefined ? "" : picked === "" ? "none" : "denied"}; render(); return; }
       keepJoin(null); S.joinMissing = true; render(); return;
     }
     keepJoin(null);
@@ -3922,7 +3929,7 @@ document.addEventListener("click", async e => {
     case "hide-source": S.sheet.showText = false; render(); break;
     case "sheet-confirm-no": S.sheet.confirm = false; render(); break;
     case "join-confirm": confirmJoin(); break;
-    case "join-pick": { const pk = S.joinPick; if(!pk) break; if(!navigator.onLine){ toast("ต้องต่ออินเทอร์เน็ตก่อน"); break; } keepJoin(pk.code + "." + pk.file); JunbiBackend.pickShared([pk.file]); break; }
+    case "join-pick": { const pk = S.joinPick; if(!pk) break; if(!navigator.onLine){ toast("ต้องต่ออินเทอร์เน็ตก่อน"); break; } keepJoin(pk.code + "." + pk.spec); JunbiBackend.pickShared(pk.spec.split(".")); break; }
     case "account": S.sheet = {kind:"account"}; render(); aiStatusLoad();
       break;
     case "detach": {
@@ -3949,6 +3956,8 @@ document.addEventListener("click", async e => {
     case "trip-menu": S.sheet = {kind:"trip-menu", id:el.dataset.id, confirm:false}; render(); break;
     case "menu-invite": openTrip(el.dataset.id, "invite"); break;
     case "trip-del-ask": S.delAsk = el.dataset.key; S.swipeOpen = el.dataset.key; render(); break;
+    case "leave-ask": S.leaveAsk = S.tripId; render(); break;
+    case "leave-cancel": S.leaveAsk = null; render(); break;
     case "trip-delete": case "trip-leave": {
       const id = (S.sheet && S.sheet.id) || el.dataset.id;
       S.swipeOpen = null; S.delAsk = null;
@@ -3958,7 +3967,7 @@ document.addEventListener("click", async e => {
         else await store.leaveTrip(id);
         if(S.tripId === id){ unsubTrip && unsubTrip(); unsubItems && unsubItems(); S.tripId = null; S.trip = null; S.items = []; }
         S.trips = S.trips.filter(x => x.id !== id);
-        S.sheet = null; render(); toast(a === "trip-delete" ? "ลบทริปแล้ว" : "ออกจากทริปแล้ว");
+        S.leaveAsk = null; S.sheet = null; if(S.view !== "home") go("home"); else render(); toast(a === "trip-delete" ? "ลบทริปแล้ว" : "ออกจากทริปแล้ว");
       } catch(err){ if(S.sheet) S.sheet.busy = false; render(); fail(err); }
       break; }
     case "sc-tab": S.scTab = el.dataset.tab; render(); break;
@@ -4033,7 +4042,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-share-2";
+const BUILD = "junbi-share-3";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
@@ -4056,10 +4065,10 @@ async function checkUpdate(){
   if(err === "drive_scope_missing") S.loginErr = "ต้องติ๊กอนุญาตให้ Junbi เก็บไฟล์ใน Google Drive ด้วย ลองเข้าสู่ระบบอีกครั้ง";
   /* what was shared into the app is read first: a trip to Google's page (sign-in, or a new Drive key every hour) drops the address,
      so it is kept in sessionStorage until the app is signed in again */
-  let m = (location.hash || "").match(/^#join-([A-Za-z0-9]{6})(?:\.([-\w]{10,}))?$/);
+  let m = (location.hash || "").match(/^#join-([A-Za-z0-9]{6})(?:\.([-\w]{10,}(?:\.[-\w]{10,}){0,40}))?$/);
   const picked = JunbiBackend.takePicked();   // back from Google's file chooser (a friend's shared trip)
   if(m) keepJoin(m[1] + (m[2] ? "." + m[2] : ""));
-  else { let pj = null; try { pj = localStorage.getItem(PENDING_JOIN); } catch(_){} const pm = pj && pj.match(/^([A-Za-z0-9]{6})(?:\.([-\w]{10,}))?$/); if(pm && (back || picked !== null)) m = pm; }
+  else { let pj = null; try { pj = localStorage.getItem(PENDING_JOIN); } catch(_){} const pm = pj && pj.match(/^([A-Za-z0-9]{6})(?:\.([-\w]{10,}(?:\.[-\w]{10,}){0,40}))?$/); if(pm && (back || picked !== null)) m = pm; }
   let add = "", shareInNow = false; try { const q = new URLSearchParams(location.search); add = q.get("add") || ""; shareInNow = q.get("share-in") === "1"; if(q.has("share-in")) history.replaceState(null, "", location.pathname); } catch(_){}
   if(!add){ const h = (location.hash || "").match(/^#add=(.+)$/); if(h) try { add = decodeURIComponent(h[1]); } catch(_){} }
   if(!add){ try { add = sessionStorage.getItem("junbi-pending-add") || ""; sessionStorage.removeItem("junbi-pending-add"); } catch(_){} }
