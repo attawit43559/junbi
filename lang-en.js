@@ -874,4 +874,9 @@ window.MYTRIP_EN = {
 "ออกจากทริปนี้?": "Leave this trip?",
 "ทริปจะหายจากเครื่องคุณ และเปิดไฟล์ทริปไม่ได้อีก ถ้าจะกลับมา ต้องให้เจ้าของทริปชวนใหม่": "The trip disappears from your phone and you can't open its file any more. To come back, the owner has to invite you again.",
 "ออกจากทริปนี้": "Leave this trip",
+"ชวนคุณร่วมวางแผน": "invited you to plan together",
+"{0} ชวนคุณร่วมวางแผน": "{0} invited you to plan together",
+"ไม่สนใจ": "Not now",
+"ซ่อนคำชวนแล้ว": "Invite hidden",
+"ทริปจากเพื่อน": "A friend's trip",
 };

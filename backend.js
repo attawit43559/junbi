@@ -2108,6 +2108,15 @@ async function placeGeo_(name, address) {
    maps.app.goo.gl link leads. A web page cannot see that itself. Empty: short links are kept, the name is typed. */
 const LINK_EXPANDER = 'https://junbi-links.attawit-charoensri.workers.dev';
 const isGoogleMaps_ = u => /^https:\/\/((www|maps)\.)?google\.[a-z.]+\/maps|^https:\/\/maps\.google\.[a-z.]+\//i.test(String(u || ''));
+/* invite mailbox on the same worker: a note waits for the friend's e-mail until they open Junbi */
+async function inbox_(path, body) {
+  if (!LINK_EXPANDER || !auth || !auth.token) return null;
+  const r = await fetch(LINK_EXPANDER.replace(/\/$/, '') + path, { method: body ? 'POST' : 'GET',
+    headers: Object.assign({ Authorization: 'Bearer ' + auth.token }, body ? { 'Content-Type': 'application/json' } : {}),
+    body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined });
+  if (!r.ok) throw Object.assign(new Error('inbox ' + r.status), { code: r.status === 401 ? 'sign_in' : 'inbox' });
+  return r.json();
+}
 async function expandLink_(url) {
   if (!LINK_EXPANDER) return '';
   try {
@@ -2407,6 +2416,9 @@ window.JunbiBackend = {
   forgetDrive() { if (auth) { auth.token = ''; auth.expires = 0; LS.set(AUTH_KEY, JSON.stringify(auth)); } },
   refresh: () => goToGoogle('none'),
   pickShared,
+  inboxList: () => inbox_('/invites').then(r => (r && r.invites) || []),
+  inboxSend: note => inbox_('/invites', note),
+  inboxRemove: tripId => inbox_('/invites/remove', { tripId }),
   /* what came back from Google's file chooser: null (nothing pending), '' (nothing chosen), the ids, or 'error:…' */
   takePicked() { const v = LS.get('junbi-picked'); LS.set('junbi-picked', null); return v == null ? null : v === '-' ? '' : v; },
   finishSignIn,
