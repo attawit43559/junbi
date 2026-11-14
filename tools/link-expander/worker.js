@@ -7,7 +7,8 @@
    It is also Junbi's invite mailbox (/invites): when someone invites a Gmail, a note "X invited you to trip Y"
    waits here until that person opens Junbi. Only the trip name, the two e-mails and the Drive file ids are kept,
    for 30 days or until they join. Whoever asks must show a Google sign-in made for Junbi; they only ever see
-   notes addressed to their own e-mail. Needs a KV namespace bound as INVITES (free: 1,000 writes a day). */
+   notes addressed to their own e-mail. Needs a KV namespace bound as INVITES (free: 1,000 writes a day).
+   The same store keeps plans shared for friends to copy (/plans): places, ideas, travel and notes, no bookings. */
 
 const ALLOWED_ORIGINS = ['https://attawit43559.github.io'];
 const SHORT = /^https:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps)\/[A-Za-z0-9_-]+/;
@@ -22,7 +23,7 @@ export default {
     if (!cors) return json({ error: 'not_allowed' }, 403, {});
     if (request.method === 'OPTIONS') return new Response(null, { headers: { ...cors, 'Access-Control-Allow-Methods': 'GET, POST', 'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Max-Age': '86400' } });
     const path = new URL(request.url).pathname;
-    if (path.startsWith('/invites')) return invites(request, env, cors, path);
+    if (path.startsWith('/invites') || path.startsWith('/plans')) return invites(request, env, cors, path);
     if (request.method !== 'GET') return json({ error: 'method' }, 405, cors);
 
     const link = (new URL(request.url).searchParams.get('u') || '').trim();
@@ -88,8 +89,22 @@ async function invites(request, env, cors, path) {
 
   if (request.method === 'GET' && path === '/invites') return json({ invites: await read(await box(me)) }, 200, cors);
   if (request.method !== 'POST') return json({ error: 'method' }, 405, cors);
+  if (Number(request.headers.get('Content-Length') || 0) > 400000) return json({ error: 'too_big' }, 413, cors);
   let b = {};
   try { b = await request.json(); } catch (_) { return json({ error: 'bad_request' }, 400, cors); }
+
+  // a plan shared for friends to copy: a snapshot under a 24-character code, kept for a year after the last share
+  if (path === '/plans' || path === '/plans/get') {
+    const key = String(b.key || '');
+    if (!/^[a-f0-9]{24}$/.test(key)) return json({ error: 'bad_request' }, 400, cors);
+    const got = await env.INVITES.get('plan:' + key);
+    const old = got ? JSON.parse(got) : null;
+    if (path === '/plans/get') return old ? json({ plan: old.plan }, 200, cors) : json({ error: 'copy_not_found' }, 404, cors);
+    if (old && old.owner !== me) return json({ error: 'not_yours' }, 403, cors);
+    if (!b.plan || typeof b.plan !== 'object' || !b.plan.trip) return json({ error: 'bad_request' }, 400, cors);
+    await env.INVITES.put('plan:' + key, JSON.stringify({ owner: me, plan: b.plan, at: Math.floor(Date.now() / 1000) }), { expirationTtl: 365 * 24 * 3600 });
+    return json({ ok: true, key }, 200, cors);
+  }
   const tripId = clean(b.tripId, 12);
   if (!/^[A-Za-z0-9]{6}$/.test(tripId)) return json({ error: 'bad_request' }, 400, cors);
 

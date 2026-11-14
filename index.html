@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#FFFDF9">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <script src="backend.js"></script>
 <title>Junbi</title>
-<script>try{if(localStorage.getItem("junbi-app-lang")==="en"){document.documentElement.lang="en";document.write('<script src="lang-en.js?v=17"><\/script>');}}catch(_){}</script>
+<script>try{if(localStorage.getItem("junbi-app-lang")==="en"){document.documentElement.lang="en";document.write('<script src="lang-en.js?v=20"><\/script>');}}catch(_){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Prompt:wght@400;500;600&display=swap">
 <style>
@@ -222,6 +222,23 @@ html.kb .dock.open .seg{display:none}
 html.kb .dock{bottom:calc(6px + var(--kb,0px))}
 .dock .seg{background:transparent;padding:0}
 .dock-body{overflow-y:auto;overscroll-behavior:contain;min-height:0}
+.scrim.center{align-items:center;padding:calc(env(safe-area-inset-top,0px) + 20px) 18px calc(env(safe-area-inset-bottom,0px) + 20px);box-sizing:border-box}
+.sheet.float{border-radius:28px;max-height:100%;padding-bottom:22px;box-shadow:0 18px 50px rgba(20,19,26,.28);animation:guideIn .22s ease-out}
+.sheet.float input[type=date]{width:100%;min-width:0;box-sizing:border-box;-webkit-appearance:none;appearance:none}
+.plan-code{font-family:ui-monospace,Menlo,monospace;font-size:15px;letter-spacing:.04em;text-align:center;background:var(--tile);border-radius:16px;padding:14px 10px;word-break:break-all;user-select:all;-webkit-user-select:all}
+.row-btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:10px}
+.guide-scrim{align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 20px) 18px calc(env(safe-area-inset-bottom,0px) + 20px);box-sizing:border-box}
+.guide-card{width:100%;max-width:380px;max-height:calc(100% - 24px);background:var(--surface);border-radius:28px;box-shadow:0 18px 50px rgba(20,19,26,.28);display:flex;flex-direction:column;gap:12px;padding:14px 0 18px;overflow:hidden;animation:guideIn .22s ease-out}
+@keyframes guideIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.guide-top{display:flex;align-items:center;justify-content:space-between;min-height:30px;padding:0 18px}.guide-n{font-size:12.5px;color:var(--muted)}
+.guide-view{overflow:hidden;touch-action:pan-y;min-height:0;contain:paint}.guide-track{display:flex;will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.guide-slide{flex:0 0 100%;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:0 18px;box-sizing:border-box;user-select:none;-webkit-user-select:none}
+.guide-slide img{width:100%;max-height:min(42vh,360px);aspect-ratio:390/560;object-fit:contain;border-radius:18px;background:var(--tile);-webkit-user-drag:none;pointer-events:none}
+.guide-slide h2{margin:8px 0 0;font-family:var(--display);font-size:19px;font-weight:500}.guide-slide p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.55}
+.guide-dots{display:flex;justify-content:center;gap:5px}.guide-dots i{width:6px;height:6px;border-radius:99px;background:var(--line);transition:width .2s,background .2s}.guide-dots i.on{width:18px;background:var(--accent)}
+.guide-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 18px}.guide-btns .btn{width:100%;min-width:0;min-height:46px;margin:0}.guide-btns .btn:disabled{opacity:.35}
+.ptr{position:fixed;left:50%;top:env(safe-area-inset-top,0px);margin-left:-11px;width:22px;height:22px;color:var(--muted);opacity:0;pointer-events:none;z-index:0}
+.ptr svg{display:block;transform:rotate(-90deg)}.ptr.ready{color:var(--accent-ink,#8A5300)}.ptr.spin svg{animation:ptrspin .8s linear infinite}@keyframes ptrspin{from{transform:rotate(-90deg)}to{transform:rotate(270deg)}}
 /* dims from the bottom and fades to clear before the top: iPhone tints the status bar from the page a beat late, so a dark top made it flash */
 .dock-dismiss{position:fixed;inset:0;z-index:15;border:0;padding:0;background:transparent;cursor:default}
 .dock.open{box-shadow:0 -4px 40px rgba(43,33,28,.22),0 0 0 1px var(--line)}
@@ -301,6 +318,68 @@ html.kb .dock{bottom:calc(6px + var(--kb,0px))}
 .lang-sw.en i{transform:translateX(39px)}
 .lang-sw b{position:relative;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;color:var(--muted);transition:color .2s}
 .lang-sw:not(.en) b:first-of-type,.lang-sw.en b:last-of-type{color:var(--surface)}
+.off-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);background:var(--tile);border-radius:999px;padding:4px 10px;margin:2px 0 6px}.off-chip .ic{opacity:.8}
+.exp-page{display:flex;flex-direction:column;gap:4px;padding-bottom:8px}
+.exp-total{background:var(--idea-soft);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px;margin-bottom:6px}
+.exp-total-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.exp-total-sum{display:flex;flex-direction:column;min-width:0}.exp-total-sum small{color:var(--idea);font-size:12px}.exp-total-sum b{font-family:var(--display);font-size:28px;font-weight:500;line-height:1.2}
+.exp-total-row{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.exp-total .exp-seg{background:rgba(255,255,255,.75)}
+.exp-total .exp-seg{padding:3px;touch-action:pan-y;cursor:pointer;user-select:none;-webkit-user-select:none}
+.exp-total .exp-seg button{color:#8A5300;font-size:13.5px;padding:2px 14px;min-height:32px}
+.exp-total .exp-seg::before{background:var(--accent);box-shadow:0 2px 6px rgba(227,148,0,.35)}.exp-total .exp-seg button.on{color:var(--on-accent);font-weight:700}
+.exp-rate{font-size:11px;color:var(--idea);opacity:.85}
+.exp-mini{display:flex;gap:8px}.exp-mini button{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:999px;font:inherit;font-size:14px;font-weight:600;min-height:44px}.exp-mini button:disabled{opacity:.5}
+.exp-mini-line{background:#FFFFFF;color:#06833A}.exp-mini-add{background:var(--accent);color:var(--on-accent)}
+.exp-each{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 20px;font-size:12.5px;color:var(--idea);padding-top:10px;border-top:1px solid rgba(138,83,0,.15)}.exp-each span{display:flex;justify-content:space-between;gap:8px;min-width:0}.exp-each span i{font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.exp-each b{color:var(--ink);font-weight:500;white-space:nowrap}
+.exp-seg{position:relative;display:inline-grid;grid-template-columns:repeat(var(--n,2),1fr);background:var(--tile);border-radius:999px;padding:3px}
+.exp-seg::before{content:"";position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px) / var(--n,2));border-radius:999px;background:var(--surface);box-shadow:0 1px 4px rgba(43,33,28,.14);transform:translateX(calc(var(--i,0) * 100%));transition:transform .3s cubic-bezier(.3,.7,.2,1)}
+.exp-seg button{position:relative;z-index:1;transition:color .2s;border:0;background:none;border-radius:999px;font:inherit;font-size:13.5px;font-weight:500;color:var(--muted);padding:4px 14px;min-height:32px;white-space:nowrap}
+.exp-seg button.on{color:var(--ink)}
+.exp-list{list-style:none;margin:0;padding:0}.exp-list>li{border-bottom:1px solid var(--line)}
+.exp-list .trow-slide{background:var(--bg)}
+.exp-row{width:100%;display:flex;align-items:center;gap:10px;border:0;background:none;font:inherit;font-size:14px;color:inherit;text-align:left;padding:8px 2px;min-height:48px}
+.exp-row .grow{display:block;min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.exp-row b{font-weight:400;font-size:14px}.exp-row small{font-size:11.5px;color:var(--muted);opacity:.7}.exp-amt{font-weight:600;font-size:14px;white-space:nowrap;flex:none}
+.exp-list li.open .exp-row .grow{white-space:normal}
+.exp-who{display:flex;flex-wrap:wrap;gap:10px;padding:0 2px 10px}
+.exp-who button{display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;padding:0;font:inherit;color:var(--muted);min-width:40px}.exp-who button.on{color:var(--ink)}
+.exp-av{width:34px;height:34px;box-sizing:border-box;border-radius:999px;border:0!important;background:var(--tile);color:#9A8D82;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:14px}
+.exp-av-n{font-size:11px;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exp-actions{display:flex;gap:10px;margin-top:14px}
+.exp-btn{flex:1;min-height:48px;border:0;border-radius:999px;font:inherit;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px}.exp-btn:disabled{opacity:.5}
+.exp-btn-line{background:#DDF5E3;color:#06833A}.exp-btn-back{background:var(--tile);color:var(--ink)}
+.exp-btn-add{background:#FFE7A8;color:#7A4A00}
+.exp-form{gap:16px}.exp-amt-box{display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 0 6px}
+.exp-big{width:100%;border:0!important;background:none!important;box-shadow:none!important;font-family:var(--display);font-size:46px!important;font-weight:500;text-align:center;color:var(--ink);padding:0!important;min-height:64px;outline:none}
+.exp-amt-box .exp-seg button{font-size:14.5px;padding:6px 22px;min-height:40px}
+.exp-what{display:flex;flex-direction:column;gap:4px}.exp-what input:focus,.exp-big:focus{outline:none!important}.exp-what input:focus{border-bottom-color:var(--accent-line)!important}.exp-what input{border:0!important;border-bottom:1.5px solid var(--line)!important;border-radius:0!important;background:none!important;font-size:17px;padding:10px 0!important}
+.pick-day{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
+.pick-day .pick-row{background:var(--soft);border-radius:13px;min-height:44px;padding:0 6px 0 12px}.pick-day .pick-name{font-weight:500;color:var(--ink)}
+.pick-row{display:flex;align-items:center;gap:6px;min-height:48px}.pick-rest .pick-row{padding:0 6px 0 12px;border-bottom:1px solid var(--line)}.pick-rest .pick-row:last-child{border-bottom:0}
+.pick-name{flex:1;min-width:0;display:flex;align-items:center;gap:10px;border:0;background:none;font:inherit;color:var(--ink);text-align:left;padding:4px 0;font-size:15px}
+.pick-name .grow{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick-ic{display:flex;flex:none;color:var(--mid)}.pick-day .pick-ic{color:var(--deep)}
+.pick-x,.pick-plus{width:32px;height:32px;border:0;border-radius:999px;display:flex;align-items:center;justify-content:center;flex:none}
+.pick-x{background:rgba(255,255,255,.65);color:var(--deep)}.idea-btns{margin-top:14px}.idea-btns .soft-btn{background:var(--tile);color:var(--ink);display:flex;align-items:center;justify-content:center;gap:6px}.idea-btns .idea-del{color:var(--danger)}.idea-btns .idea-del.ask{background:var(--danger);color:#fff}.idea-del{color:var(--danger)}.idea-del.ask{background:var(--danger);color:#fff}.pick-plus{background:var(--tile);color:var(--ink)}
+.picker-add{background:var(--place-soft)!important;color:var(--place)!important}
+.ai-seg{position:relative;display:grid;grid-template-columns:1fr 1fr;background:var(--tile);border-radius:999px;padding:3px;margin-bottom:10px}
+.ai-seg::before{content:"";position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);border-radius:999px;background:var(--surface);box-shadow:0 1px 4px rgba(43,33,28,.14);transform:translateX(calc(var(--i,0) * 100%));transition:transform .3s cubic-bezier(.3,.7,.2,1)}
+.ai-seg button{position:relative;z-index:1;border:0;background:none;font:inherit;font-size:13.5px;font-weight:500;color:var(--muted);min-height:34px;display:flex;align-items:center;justify-content:center;gap:6px}
+.ai-seg button[aria-selected="true"]{color:var(--ink);font-weight:600}
+.ai-rec-inline .idea-compose-body{overflow:visible;max-height:none;padding:0;gap:10px;font-size:14px}
+.ai-rec-inline .suggest-cats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.ai-rec-inline .suggest-cats button{justify-content:center;font-size:14px;min-height:40px;padding:0 4px;white-space:nowrap}
+.help-page .help-note,.ai-rec-inline .help-note{background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);font-size:14px;padding:11px 14px;min-height:44px}
+.ai-btns .soft-btn{background:var(--ai-soft,#E0ECFF)!important;color:var(--ai,#2B61B2)!important;font-size:14px;display:flex;align-items:center;justify-content:center;gap:6px}
+.start-card{background:var(--surface);border-radius:20px;padding:14px 16px 8px;margin:4px 0 12px;box-shadow:0 1px 3px rgba(43,33,28,.06)}
+.start-hd{display:flex;justify-content:space-between;align-items:center;font-size:15px}.start-n{font-size:12.5px;color:var(--muted)}
+.start-bar{height:5px;border-radius:9px;background:var(--tile);margin:8px 0 6px;overflow:hidden}.start-bar i{display:block;height:100%;background:var(--accent,#F4A62A);border-radius:9px}
+.start-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}.start-row:last-of-type{border-bottom:0}
+.start-row .grow{display:flex;flex-direction:column;min-width:0}.start-row b{font-size:14px;font-weight:500}.start-row small{font-size:12px;color:var(--muted)}
+.start-ck{width:22px;height:22px;border-radius:999px;border:2px solid var(--line);flex:none;display:flex;align-items:center;justify-content:center}
+.start-row.done .start-ck{background:#3E9B3C;border-color:#3E9B3C;color:#fff}.start-row.done b{color:var(--muted);text-decoration:line-through}
+.start-go{border:0;background:var(--tile);color:var(--ink);font:inherit;font-size:13px;font-weight:600;padding:7px 14px;border-radius:999px;flex:none}
+.start-back{width:100%;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;font:inherit;color:inherit;text-align:left}
+.start-skip{display:block;margin:2px auto 0;font-size:12.5px;color:var(--muted)}
 .acc-ai{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 8px;padding:6px 0 12px;border-bottom:1px solid var(--line);margin-bottom:4px}.acc-ai>span:first-child{display:flex;align-items:center;gap:8px;font-weight:500}.acc-ai small{grid-column:1/-1;padding-left:26px}.ai-badge{font-size:12.5px;font-weight:600;padding:4px 10px;border-radius:999px}.ai-badge.ok{background:var(--ai-soft,#E0ECFF);color:var(--ai,#2B61B2)}.ai-badge.full{background:#FDE7E4;color:#A62219}
 .sc-step{display:flex;gap:10px;align-items:flex-start}
 .sc-n{width:24px;height:24px;border-radius:999px;background:var(--idea-soft);color:var(--idea);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px}
@@ -381,6 +460,7 @@ html{overflow-x:hidden}body{overflow-x:clip}
 html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 body{font-size:14px}
 input,select,textarea{font-size:16px!important}
+.help-page .help-note,.ai-rec-inline .help-note,.travel-memo{font-size:14px!important}
 .screen{padding-block:12px 28px;gap:14px}
 .top{gap:10px;min-height:40px}
 .top h1{font-size:19px}
@@ -522,6 +602,7 @@ html.lock,html.lock body{overflow:hidden}
 .compose-sheet .chips:not(.t-idea) button[aria-pressed="true"]{background:var(--accent-soft);border-color:transparent;color:var(--ink);font-weight:600}
 .idea-compose-sheet .chips.t-idea.suggest-cats{grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:2px}.idea-compose-sheet .chips.t-idea.suggest-cats button{flex-direction:row;gap:5px;font-size:14px;padding:10px 4px}
 .idea-suggest-row .grow{display:flex;flex-direction:column;gap:2px;min-width:0;text-align:left}
+.travel-memo{margin-top:4px}.entry-move .entry-copy.has-memo{display:flex;flex-direction:column;align-items:flex-start;gap:1px}.move-memo{display:block;font-size:12px;color:var(--muted);white-space:normal;overflow-wrap:anywhere}
 .suggest-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:6px;border:0}.soft-btn.suggest-ok{min-height:50px;border:0;border-radius:14px;font-size:15px;font-weight:600;background:var(--place-soft);color:var(--place)}.soft-btn.suggest-ok:disabled{opacity:.5}.small-wait{padding:10px 0}.small-wait .spinner{width:22px;height:22px}
 html.kb .idea-compose-sheet:not(.steady){padding-top:12px;padding-bottom:12px;gap:8px}html.kb .idea-compose-sheet:not(.steady) .hd .round{height:32px;width:32px}html.kb .idea-compose-sheet:not(.steady) .hd h2{font-size:17px}html.kb .idea-compose-sheet:not(.steady) .idea-compose-body{gap:8px}html.kb .idea-compose-sheet:not(.steady) .fld{gap:4px}html.kb .idea-compose-sheet:not(.steady) .fld input{height:40px;padding:7px 12px}html.kb .idea-compose-sheet:not(.steady) .chips button{min-height:32px;padding:5px 9px}html.kb .idea-compose-sheet:not(.steady) .btn{height:42px;min-height:42px}
 .idea-suggest-row{display:flex;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink)}.idea-suggest-row[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent-line)}.idea-suggest-row:disabled{opacity:.58}.idea-suggest-results h3{font-size:16px}.idea-compose-sheet .chips.t-idea{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible}.idea-compose-sheet .chips.t-idea button{white-space:nowrap;min-width:0;justify-content:center;padding:7px 2px;flex-direction:column;gap:3px;border-radius:14px;font-size:12.5px;line-height:1.2}html.kb .idea-compose-sheet .chips.t-idea button{padding:5px 2px}
@@ -543,7 +624,7 @@ html.kb .idea-compose-sheet:not(.steady){padding-top:12px;padding-bottom:12px;ga
 .tab-pill::after{content:"";position:absolute;inset:0;border-radius:inherit;background:radial-gradient(120% 90% at 50% 125%,rgba(255,255,255,.22),rgba(255,255,255,0) 55%)}
 .tabbar.drag .tab-pill{transform:translateX(var(--x));transition:scale .2s ease-out;scale:var(--sx,1.04) var(--sy,1.03)}
 .tabbar.press:not(.drag) .tab-pill{scale:1.02}
-.tabbar button{position:relative;z-index:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:1px;padding:4px 0 3px;font-size:10.5px;line-height:1.25;color:var(--muted);border-radius:999px;-webkit-tap-highlight-color:transparent;transition:color .2s}
+.tabbar button{position:relative;z-index:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:1px;padding:4px 0 3px;font-size:10.5px;white-space:nowrap;min-width:0;line-height:1.25;color:var(--muted);border-radius:999px;-webkit-tap-highlight-color:transparent;transition:color .2s}
 .tb-ic{position:relative;width:21px;height:21px;display:block}
 .tb-ic .ic{position:absolute;inset:0;width:21px;height:21px;transition:opacity .18s,transform .25s ease-out}
 .tb-ic .ic+.ic{opacity:0}
@@ -564,33 +645,11 @@ html.kb .tabbar{display:none}
 .page .booking-group{padding:14px 16px}
 .workflow-search,.workflow-search:focus,.workflow-search:focus-visible,.dock .workflow-search:focus,.dock .workflow-search:focus-visible{outline:none!important;box-shadow:0 1px 3px rgba(43,33,28,.08)!important;border-color:transparent!important;background:var(--surface)!important}
 /* add a saved place to the plan: day chips, an optional time, one soft button */
-.plan-quick{display:flex;flex-direction:column;gap:10px}
-.plan-quick>b{font-size:15px}
-.plan-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
-.plan-days::-webkit-scrollbar{display:none}
-.plan-days button{border:0;border-radius:12px;background:var(--tile);color:var(--ink);height:42px;font-family:var(--display);font-size:16px;font-weight:600}
-.plan-days button[aria-pressed="true"]{background:var(--accent-soft)}
-.plan-go{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center}
-.plan-time{position:relative;display:flex;align-items:center;gap:8px;background:var(--tile);border-radius:999px;padding:0 14px;min-height:44px;color:var(--muted)}
-.plan-time input{border:0;background:transparent;font:inherit;font-size:15px;color:var(--ink);min-width:0;width:74px;outline:none;-webkit-appearance:none;appearance:none}
-.plan-time input::-webkit-calendar-picker-indicator{display:none}
 .tp-wrap{position:relative;display:block;min-width:0}
-.plan-time input{display:block;padding:0;margin:0;text-align:left;line-height:44px;height:44px}
-.plan-time input::-webkit-date-and-time-value{text-align:left;margin:0;padding:0}
-.plan-time input::-webkit-datetime-edit{padding:0}
-.plan-time .tp{position:absolute;left:0;top:0;line-height:44px;font-size:15px;color:var(--muted);pointer-events:none;display:none}
-.plan-time:has(input:invalid) .tp{display:block}
-.plan-time input:invalid{color:transparent}
 .soft-btn{border:0;border-radius:999px;min-height:44px;padding:0 14px;background:var(--place-soft);color:var(--place);font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:14px}
 .soft-btn:disabled{opacity:.5}
-.plan-done{display:flex;align-items:center;gap:12px;background:var(--place-soft);border-radius:16px;padding:12px 14px}
 .item-edit-visible{border:0!important;box-shadow:none!important;background:var(--tile)!important;color:var(--ink)!important;border-radius:999px}
-.plan-done .soft-btn{background:var(--surface)}
-.plan-time{justify-content:center;padding:0 16px;gap:6px}
 .tp-wrap{width:50px;flex:none}
-.plan-time input{width:50px;text-align:center}
-.plan-time input::-webkit-date-and-time-value{text-align:center}
-.plan-time .tp{left:0;right:0;text-align:center}
 .help-page{display:flex;flex-direction:column;gap:14px}
 .help-q{display:flex;flex-direction:column;gap:8px}.help-q>b{font-size:14px;font-weight:600}
 .help-start{min-height:50px;font-size:15px;background:var(--ai-soft);color:var(--ai)}
@@ -604,17 +663,6 @@ html.kb .tabbar{display:none}
 .help-kind{font-size:11.5px;font-weight:600;color:var(--muted)}
 .help-fix{margin-top:8px;min-height:36px;font-size:13px}
 .help-tip .soft-btn{background:var(--place-soft);color:var(--place)}
-/* every choice on the helper page is the same soft tile: 3 across, 44 high, 14 radius, 14px text; a chosen one turns green */
-.help-pace,.help-likes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-.help-pace button,.help-likes button{border:0;border-radius:14px;min-height:44px;padding:0 6px;background:var(--tile);color:var(--ink);font:inherit;font-size:14px;line-height:1.2}
-.help-pace button[aria-pressed="true"],.help-likes button[aria-pressed="true"]{background:var(--place-soft);color:var(--place);font-weight:600}
-.help-like-in{grid-column:span 2;box-sizing:border-box;height:44px;border:0;border-radius:14px;background:var(--tile);color:var(--ink);padding:0 14px;font:inherit;font-size:14px!important;width:100%;min-width:0}
-.help-like-in::placeholder{color:var(--muted)}
-.help-like-in:focus{outline:none;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line)}
-@supports (-webkit-touch-callout:none){
-  /* iPhone zooms the page into any box under 16px: type at 16px, drawn at 14px */
-  .help-like-in{font-size:16px!important;width:calc(100% / .875);height:calc(44px / .875);border-radius:16px;padding:0 16px;transform:scale(.875);transform-origin:0 0;margin-bottom:calc(44px - 44px / .875)}
-}
 .help-start,.help-actions .soft-btn,.help-fix{border-radius:14px}
 .big-sheet{position:fixed;inset:0;z-index:30;background:#FFFFFF;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
 .big-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 10px 18px}
@@ -802,6 +850,7 @@ const itemIcon = it => {
 /* the day a memo was put into the plan, from the place made from it */
 const plannedFrom = id => S.items.find(i => i.type === "place" && (i.data||{}).fromIdea === id);
 const IC = {
+  refresh:'<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>',
   globe:'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 12h18M12 3c2.6 2.5 4 5.6 4 9s-1.4 6.5-4 9c-2.6-2.5-4-5.6-4-9s1.4-6.5 4-9z" fill="none" stroke="currentColor" stroke-width="1.8"/>',
   history:'<path d="M3 11a9 9 0 1 1 2.4 7M3 4v7h7M12 7v5l3 2"/>',
   more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
@@ -824,6 +873,12 @@ const IC = {
   upload:'<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
   users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M19 8v6M16 11h6"/>',
   navi:'<path d="M12 3 5 20l7-4 7 4z"/>',
+  share:'<path d="M12 15V3M8 7l4-4 4 4"/><path d="M6 11H5v10h14V11h-1"/>',
+  copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
+  people:'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9.5" r="2.3"/><path d="M3.5 19c.6-3 2.8-4.8 5.5-4.8s4.9 1.8 5.5 4.8"/><path d="M15.5 14.4c2.3 0 4.1 1.5 4.6 4.1"/>',
+  walletF:'<path d="M4 7h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a1 1 0 0 1-1-1z" style="fill:currentColor"/><path d="M4 7l11-3v3"/><circle cx="16" cy="13.5" r="1.3" style="fill:var(--tab-cut);stroke:var(--tab-cut)"/>',
+  wallet:'<path d="M4 7h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a1 1 0 0 1-1-1z"/><path d="M4 7l11-3v3"/><circle cx="16" cy="13.5" r="1.2"/>',
+  wifiOff:'<path d="M3 3l18 18"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M5 12.9a10 10 0 0 1 5.2-2.7M14.8 10.3A10 10 0 0 1 19 12.9"/><path d="M2 9.3a15 15 0 0 1 4.3-2.6M10.7 5.1A15 15 0 0 1 22 9.3"/><path d="M12 20h.01"/>',
   wxFog:'<path d="M4 9h12M6 13h14M4 17h11"/>',
   wxDrizzle:'<path d="M7 15h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 8a3.5 3.5 0 0 0 1 7z"/><path d="M10 18.5l-.6 1.5M14.5 18.5l-.6 1.5"/>',
   wxStorm:'<path d="M7 15h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 8a3.5 3.5 0 0 0 1 7z"/><path d="M13 13l-3 4.5h3.5L11 22"/>',
@@ -1054,6 +1109,27 @@ async function refreshTrip(id){
     C.items[id] = next; C.revisions[id]=r.revision; emit();secureTripFiles(r.trip,r.items);
   } catch(_) { S.tripLoading = false; emit(); }
 }
+/* pull down at the top of the screen to fetch the latest plan (e.g. places just shared from Google Maps):
+   the page slides down and a small spinner shows in the gap above it, never over the content */
+(()=>{let y0=null,t0=0,dy=0,busy=false,el=null;const MAX=96,GO=60,HOLD=52;
+  const page=()=>document.querySelector('#app > main.screen');
+  const spin=()=>{if(!el){el=document.createElement('div');el.className='ptr';el.setAttribute('aria-hidden','true');el.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100"/></svg>';document.body.appendChild(el);}return el;};
+  const show=(d,{anim=false,loading=false}={})=>{const m=page(),s=spin(),c=s.querySelector('circle');
+    if(m){m.style.transition=anim?'transform .25s ease':'none';m.style.transform=d>0?`translateY(${d}px)`:'';}
+    s.style.transition=anim?'opacity .2s,transform .25s ease':'none';s.style.opacity=d>14?Math.min(1,(d-14)/30):0;s.style.transform=`translateY(${Math.max(0,d/2-11)}px)`;
+    s.classList.toggle('spin',loading);c.setAttribute('stroke-dasharray',loading?'70 100':`${Math.min(80,d/GO*80)} 100`);s.classList.toggle('ready',d>=GO&&!loading);};
+  document.addEventListener('touchstart',e=>{y0=null;dy=0;if(busy||e.touches.length!==1||window.scrollY>2||!page())return;
+    if(document.querySelector('.scrim')||e.target.closest?.('.dock-body,.sheet,.dock.open,input,textarea,select,.exp-seg,[data-swipe],[data-guide-view]'))return;
+    y0=e.touches[0].clientY;t0=Date.now();},{passive:true});
+  document.addEventListener('touchmove',e=>{if(y0==null)return;const d=e.touches[0].clientY-y0;
+    if(d<=0||window.scrollY>2||(dy===0&&Date.now()-t0>350)){y0=null;if(dy)show(0,{anim:true});dy=0;return;}   // a long press is a drag, not a pull
+    dy=Math.min(MAX,d*.5);show(dy);},{passive:true});
+  const end=async()=>{if(y0==null)return;y0=null;const d=dy;dy=0;if(d<GO){show(0,{anim:true});return;}
+    busy=true;show(HOLD,{anim:true,loading:true});
+    try{checkUpdate();flush();if(S.view==='trip'&&S.tripId)await refreshTrip(S.tripId);else await refreshTrips();if(!navigator.onLine)toast('ไม่มีอินเทอร์เน็ต');}
+    finally{busy=false;show(0,{anim:true});}};
+  document.addEventListener('touchend',end,{passive:true});document.addEventListener('touchcancel',()=>{if(y0==null)return;y0=null;dy=0;show(0,{anim:true});},{passive:true});
+})();
 const securingTrips=new Set();
 async function secureTripFiles(trip,items){
   if(trip.ownerId!==S.me||securingTrips.has(trip.id))return;
@@ -1085,7 +1161,7 @@ async function prepFile(f){
 
 /* ---------- helpers ---------- */
 function toast(msg){ S.toast = msg; render(); clearTimeout(toast.t); toast.t = setTimeout(() => { S.toast=""; render(); }, 2600); }
-const busyForm = () => ["new","review","upload"].includes(S.view) || S.catTab === "help" || (S.sheet && (["place","move","idea","trip-edit","doc","taxi","sos","sos-doctor"].includes(S.sheet.kind) || !!S.sheet.edit));
+const busyForm = () => ["new","review","upload"].includes(S.view) || S.catTab === "help" || (S.sheet && (["place","move","idea","trip-edit","doc","taxi","sos","sos-doctor","guide"].includes(S.sheet.kind) || !!S.sheet.edit));
 /* background refreshes wait while someone is scrolling the bottom panel, so the list doesn't jump under their finger */
 let panelScrollAt = 0;
 document.addEventListener("scroll", e => { if(e.target && e.target.classList && e.target.classList.contains("dock-body")) panelScrollAt = Date.now(); }, true);
@@ -1131,7 +1207,11 @@ function openTrip(id, view="trip"){
 /* ---------- views ---------- */
 /* each trip gets one of the four colours, picked from its id so it stays the same */
 /* each trip gets its own header colour, the same every time it opens */
-function tone(id){ let n = 7; for(const c of String(id||"")) n = (n * 31 + c.charCodeAt(0)) >>> 0; return ["flight","stay","place","move","plum","caramel","olive","spruce","coral","sun","sky","indigo"][n % 12]; }
+/* each trip's colour changes every time the app is opened (never the same as last time), and stays put while it is open */
+const TONE_SHIFT = (() => { let last = -1; try { last = Number(localStorage.getItem("junbi-app-tone-shift")); } catch(_){}
+  let n = Math.floor(Math.random() * 11); if(n >= last && last >= 0) n++;   // 0..11, skipping last time's
+  try { localStorage.setItem("junbi-app-tone-shift", String(n)); } catch(_){} return n; })();
+function tone(id){ let n = 7; for(const c of String(id||"")) n = (n * 31 + c.charCodeAt(0)) >>> 0; return ["flight","stay","place","move","plum","caramel","olive","spruce","coral","sun","sky","indigo"][(n + TONE_SHIFT) % 12]; }
 function swipeWrap(t, inner, cls){
   const owner = t.ownerId === S.me;
   const key = "t:" + t.id, ask = S.delAsk === key;
@@ -1182,12 +1262,13 @@ function vHome(){
   return `<main class="screen">
     <header class="home-top"><h1>ทริปของฉัน</h1><span style="display:flex;gap:8px;align-items:center"><button class="new-btn" data-act="new">${ic("plus",18)}สร้างทริป</button><button class="me-btn" data-act="account" aria-label="บัญชี ${esc(S.myName)}">${S.user && S.user.picture ? `<img src="${esc(S.user.picture)}" alt="" referrerpolicy="no-referrer">` : esc((S.myName||"?").slice(0,1))}</button></span></header>
     ${invitesBox()}
+    ${S.tripsReady ? vStart(next && next.id) : ""}
     ${!S.tripsReady ? `<p class="muted">กำลังโหลดทริป…</p>` :
       S.trips.length === 0 ? `<div class="card empty">${MOUNTAINS}
         <p class="muted">ยังไม่มีทริป</p></div>` :
       `${next ? `<section class="stack"><div class="sec-h"><h2>กำลังจะถึง</h2></div>${card(next)}</section>` : ""}
        ${rest.length ? `<section class="stack" style="gap:10px"><div class="sec-h"><h2>ทริปอื่นๆ</h2></div>${rest.map(row).join("")}</section>` : ""}`}
-    ${"" ? `<form class="join-row" data-form="join"><label for="join-code" class="sr">รหัสทริปจากเพื่อน</label><input id="join-code" name="code" maxlength="6" placeholder="รหัสทริปจากเพื่อน" autocomplete="off" value="${esc(S.joinCode)}" data-bind="root:joinCode"><button type="submit">เข้าร่วม</button></form>` : ""}
+    <form class="join-row" data-form="join"><label for="join-code" class="sr">รหัสแผนจากเพื่อน</label><input id="join-code" name="code" maxlength="400" placeholder="วางรหัสแผนจากเพื่อน" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(S.joinCode)}" data-bind="root:joinCode"><button type="submit">เปิด</button></form>
     ${!JunbiBackend.aiKey() && !S.aiCardHidden ? `<button class="ai-card" data-act="ai-setup">${ic("spark",22)}<span class="grow"><b>เชื่อม AI ฟรี</b><br><span class="muted small">ให้แอปอ่านตั๋ว ช่วยดูแผน และแปลภาษาให้ ตั้งครั้งเดียว 1 นาที</span></span>${ic("chev")}</button>` : ""}
     ${!CONNECTED ? `<p class="note">${ic("info",20)}<span>ยังไม่ได้เชื่อม Google Sheet ข้อมูลอยู่ในเครื่องนี้เท่านั้น</span></p>` : ""}
   </main>`;
@@ -1210,12 +1291,49 @@ function vTripMenu(s){
   </div></div>`;
 }
 
+/* share a link that gives a friend their own copy of the plan (places, ideas, travel, notes; no bookings or expenses) */
+const copyMsg = key => `แผนเที่ยว “${S.trip?.name || ""}” จาก Junbi\nเปิดแอป Junbi แล้ววางข้อความนี้ในช่อง “วางรหัส” หน้าแรก\nรหัสแผน: ${key}`;
+function vCopyShare(s){
+  return `<div class="scrim center" data-act="close-sheet"><div class="sheet float" role="dialog" aria-modal="true" aria-label="แชร์แผนให้เพื่อนคัดลอก" data-stop="1"><div class="hd"><h2>แชร์แผนให้เพื่อน</h2><button class="round" data-act="close-sheet" aria-label="ปิด">${ic("close")}</button></div>
+    <p class="muted small" style="margin:0">ส่งรหัสนี้ให้เพื่อน เพื่อนวางในช่องหน้าแรกของแอป แล้วได้ทริปเป็นของเขาเอง · ไม่รวมตั๋ว ที่พัก และค่าใช้จ่าย</p>
+    ${s.err ? `<p class="err">${esc(s.err)}</p>` : !s.key ? `<p class="muted small" role="status">กำลังสร้างรหัส…</p>` : `<div class="plan-code" aria-label="รหัสแผน">${esc(s.key)}</div>
+    <div class="row-btns"><button class="btn ghost" data-act="copy" data-text="${esc(copyMsg(s.key))}">${ic("copy",18)}คัดลอก</button>${navigator.share ? `<button class="btn primary" data-act="copy-share-send">${ic("share",18)}ส่ง</button>` : ""}</div>`}
+  </div></div>`;
+}
+function vCopyIn(s){
+  const p = s.preview;
+  return `<div class="scrim center" data-act="close-sheet"><div class="sheet float" role="dialog" aria-modal="true" aria-label="คัดลอกแผนเที่ยว" data-stop="1"><div class="hd"><h2>คัดลอกแผนเที่ยว</h2><button class="round" data-act="close-sheet" aria-label="ปิด" ${s.busy?"disabled":""}>${ic("close")}</button></div>
+    ${s.err ? `<p class="err">${esc(s.err)}</p>` : !p ? `<p class="muted small" role="status">กำลังโหลด…</p>` : `<form class="stack" data-form="copy-in" style="gap:12px">
+      <div><b style="font-size:18px">${esc(p.name)}</b><br><span class="muted small">${esc([p.destination, p.days ? p.days + " วัน" : "", p.places + p.ideas ? (p.places + p.ideas) + " สถานที่" : ""].filter(Boolean).join(" · "))}</span></div>
+      <label class="fld">วันเริ่มเที่ยวของคุณ<input type="date" required value="${esc(s.start || "")}" data-bind="sheet:start"></label>
+      <p class="muted small" style="margin:0">ได้ทริปใหม่เป็นของคุณเอง · ไม่รวมตั๋ว ที่พัก และค่าใช้จ่าย</p>
+      <button class="btn primary" type="submit" ${s.busy?"disabled":""}>${s.busy?"กำลังคัดลอก…":"คัดลอกเป็นทริปของฉัน"}</button>
+    </form>`}
+  </div></div>`;
+}
+async function startCopy(key){
+  go("home"); S.sheet = {kind:"copy-in", key, preview:null, start:"", busy:false, err:""}; render();
+  const s = S.sheet;
+  try { const p = await api("copyPreview", {key}); if(S.sheet !== s) return; s.preview = p; s.start = p.startDate || today(); }
+  catch(e){ if(S.sheet === s) s.err = e && e.code === "copy_not_found" ? "ไม่พบแผนนี้ ลิงก์อาจไม่ถูกต้อง" : e && e.code === "offline" ? "ไม่มีอินเทอร์เน็ต ลองใหม่อีกครั้ง" : "โหลดแผนไม่สำเร็จ ลองใหม่อีกครั้ง"; }
+  if(S.sheet === s) render();
+}
+async function confirmCopy(){
+  const s = S.sheet; if(s?.kind !== "copy-in" || s.busy || !s.preview) return;
+  s.busy = true; render();
+  try {
+    const r = await api("copyTrip", {key:s.key, startDate:s.start});
+    C.trips[r.trip.id] = r.trip; if(!C.myTrips.includes(r.trip.id)) C.myTrips.unshift(r.trip.id); emit();
+    S.sheet = null; toast("คัดลอกแผนแล้ว"); openTrip(r.trip.id); refreshTrip(r.trip.id);
+  } catch(e){ s.busy = false; if(S.sheet === s){ s.err = e && e.code === "offline" ? "ไม่มีอินเทอร์เน็ต ลองใหม่อีกครั้ง" : "คัดลอกไม่สำเร็จ ลองใหม่อีกครั้ง"; render(); } }
+}
 function vTripMore(){
   return `<div class="scrim" data-act="close-sheet"><div class="sheet" role="dialog" aria-modal="true" aria-label="เพิ่มเติม" data-stop="1"><div class="hd"><h2>เพิ่มเติม</h2><button class="round" data-act="close-sheet" aria-label="ปิด">${ic('close')}</button></div><div class="menu">
     <button data-act="trip-edit">${ic("edit",20)}แก้ไขชื่อ / วันเที่ยว</button>
     <button data-act="export-open">${ic("image",20)}ส่งออกแผนเที่ยว (PDF / รูป)</button>
     <button data-act="sos-open">${ic("sos",20)}ข้อมูลฉุกเฉิน</button>
     <button data-act="invite">${ic("users",20)}ผู้ร่วมทริป / ชวนเพื่อน</button>
+    <button data-act="copy-share">${ic("share",20)}แชร์แผนให้เพื่อนคัดลอก</button>
     <button data-act="account">${ic("info",20)}บัญชีและการตั้งค่า</button>
     ${ownOn(tripDates(S.trip)).length||planNotes(tripDates(S.trip)).length?`<button class="danger" data-act="clear-open">${ic('trash',20)}ล้างแผน…</button>`:''}
   </div></div></div>`;
@@ -1323,12 +1441,15 @@ function dayOrderPending(date){return S.items.some(i=>i.type==='place'&&i.date==
 function dayEntryKey(e){return JSON.stringify([e.it.id,e.phase||'']);}
 function saveDayRowOrder(date,keys,tripId){
   if(S.trip?.id!==tripId||S.directSaving)return false;
-  const rows=dayEntries(date).filter(e=>!e.night),current=rows.map(dayEntryKey),known=new Set(current);
+  const rows=dayEntries(date).filter(e=>!e.night&&!e.start),current=rows.map(dayEntryKey),known=new Set(current);   // the 'leaving the hotel' row is not dragged
   if(keys.length!==current.length||new Set(keys).size!==keys.length||keys.some(k=>!known.has(k))){toast('รายการเปลี่ยนไปแล้ว ลองเรียงใหม่อีกครั้ง');render();return false;}
   if(keys.every((k,n)=>k===current[n])){render();return true;}
   const patch={dayRowOrder:{[date]:keys.slice()}};
   C.trips[tripId]=deepMerge(C.trips[tripId],patch);
-  queue('saveTrip',{trip:{id:tripId,...patch}});emit();toast('เรียงรายการแล้ว');return true;
+  queue('saveTrip',{trip:{id:tripId,...patch}});emit();
+  toast('เรียงรายการแล้ว');
+  setTimeout(()=>{if(S.trip?.id===tripId)staleTravel(date).forEach(m=>store.deleteItem(tripId,m.id).catch(()=>{}));},60);   // travel saved for the old order goes; new gaps get routes found in the background
+  return true;
 }
 /* the stay whose nights cover the night of `date` (check-in ≤ date < check-out): where the group sleeps that night,
    and so where the next day starts. A stay saved without a check-out date (a booking the AI could not read fully)
@@ -1343,7 +1464,26 @@ function stayForNight(date){
   const ds = S.trip ? tripDates(S.trip) : [], last = ds.length ? ds[ds.length - 1] : "";
   return (nextIn ? date < nextIn : (!last || date < last)) ? open : null;
 }
+/* the day's rows, with each saved travel leg placed between the two stops it joins.
+   A leg saved for an old order (its stops are no longer next to each other) is not shown. */
 function dayEntries(dateStr){
+  const all = dayEntriesRaw(dateStr), manual = e => e.it.type === "move" && !!(e.it.data || {}).legKey;
+  if(!all.some(manual)) return all;
+  const out = all.filter(e => !manual(e)), byId = new Map(all.filter(manual).map(e => [e.it.id, e]));
+  for(const leg of manualTravelLegs(dateStr, out)){
+    const e = leg.saved && byId.get(leg.saved.id); if(!e) continue; byId.delete(leg.saved.id);
+    let at = leg.beforeKey ? out.findIndex(x => dayEntryKey(x) === leg.beforeKey) : -1;
+    if(at < 0){ const a = leg.afterKey ? out.findIndex(x => dayEntryKey(x) === leg.afterKey) : -1; at = a >= 0 ? a + 1 : out.findIndex(x => x.night); }
+    out.splice(at < 0 ? out.length : at, 0, e);
+  }
+  return out;
+}
+/* travel legs saved for stops that are no longer next to each other (after moving places around) */
+function staleTravel(dateStr){
+  const keep = new Set(manualTravelLegs(dateStr).map(l => l.saved?.id).filter(Boolean));
+  return S.items.filter(m => m.type === "move" && m.date === dateStr && (m.data || {}).legKey && !keep.has(m.id));
+}
+function dayEntriesRaw(dateStr){
   const out = [];
   for(const it of S.items){
     if(it.type === "stay"){
@@ -1444,7 +1584,7 @@ function entryHtml(e){
     e={...e,sub:''};if(!e.time&&n)e.dur=n>=60?[Math.floor(n/60)+(n%60?':'+String(n%60).padStart(2,'0'):''),'ชม.']:[String(n),'นาที'];}
   if(e.it.type==='move'&&!e.night){
     const how=[s_(d.mode)||'ขนส่งสาธารณะ',e.dur?e.dur.join(' '):'',e.time?'ออก '+e.time:''].filter(Boolean).join(' · ');
-    return swipeItem(e.it, e.it.id + "::" + (e.time||""), `<button class="entry entry-move${sortable?' reorderable-entry':''}" ${sortable?`data-place-drag="${esc(dayEntryKey(e))}"`:""} data-act="item" data-id="${esc(e.it.id)}" aria-label="${esc(how+' · '+title)}"><span class="time"></span><span class="move-rail" aria-hidden="true"></span><span class="move-ic" aria-hidden="true">${ic(itemIcon(e.it),15)}</span><span class="grow entry-copy"><span class="ttl">${esc(how)}</span></span></button>`);
+    return swipeItem(e.it, e.it.id + "::" + (e.time||""), `<button class="entry entry-move${sortable?' reorderable-entry':''}" ${sortable?`data-place-drag="${esc(dayEntryKey(e))}"`:""} data-act="item" data-id="${esc(e.it.id)}" aria-label="${esc(how+' · '+title)}"><span class="time"></span><span class="move-rail" aria-hidden="true"></span><span class="move-ic" aria-hidden="true">${ic(itemIcon(e.it),15)}</span><span class="grow entry-copy${s_(d.memo)?' has-memo':''}"><span class="ttl">${esc(how)}</span>${s_(d.memo)?`<span class="move-memo">${esc(d.memo)}</span>`:''}</span></button>`);
   }
   return swipeItem(e.it, e.it.id + ":" + (e.phase||"") + ":" + (e.time||""), `<button class="entry${sortable?' reorderable-entry':''}${e.it.type==='move'&&!e.night?' entry-move':''}" ${sortable?`data-place-drag="${esc(dayEntryKey(e))}" title="กดค้างเพื่อลากเรียง · Alt + ลูกศรเพื่อเรียงด้วยคีย์บอร์ด"`:""} data-act="item" data-id="${esc(e.it.id)}"><span class="time${e.dur?' dur':''}${e.it.type==='flight'||e.it.type==='move'?' fixed':''}">${e.night ? "" : e.dur ? `<b>${esc(e.dur[0])}</b><small>${esc(e.dur[1])}</small>` : esc(e.it.source==='ai'&&['place','move'].includes(e.it.type)?aiClock(e.time,!!d.timeLocked):(e.time||"--:--"))}</span>
     ${e.night ? `<span class="thumb night t-stay" role="img" aria-label="คืนนี้">${ic("moon",20)}</span>` : `<span class="thumb tc ${toneOf(e.it)}">${ic(itemIcon(e.it),20)}</span>`}<span class="grow entry-copy"><span class="ttl">${esc(title)}</span>${e.sub?`<span class="muted small entry-sub">${esc(e.sub)}</span>`:""}</span></button>${!e.night&&(e.it.type==='place'||(e.it.type==='stay'&&(e.phase==='in'||e.phase==='out'||e.start)))?`<input type="time" class="time-pick" data-time-id="${esc(e.it.id)}" data-time-field="${e.start?'leave:'+e.dayDate:e.phase==='out'?'endTime':'time'}" value="${esc(/^\d\d:\d\d$/.test(e.time||'')?e.time:'')}" aria-label="ตั้งเวลา ${esc(title)}">`:''}${!e.night&&itemFiles(e.it).length?`<button type="button" class="entry-doc" data-act="doc-open" data-id="${esc(e.it.id)}" aria-label="เปิดตั๋ว / ใบจอง ${esc(title)}">${ic("ticket",19)}</button>`:''}`);
@@ -1462,7 +1602,7 @@ function catRow(it){
 }
 function filteredIdeas(){return S.items.filter(i => i.type === "idea" && (!S.ideaFilter||(i.data||{}).kind===S.ideaFilter) && (!S.ideaQuery || (briefName(i.title)+" "+(i.data||{}).kind).toLocaleLowerCase().includes(S.ideaQuery.trim().toLocaleLowerCase()))).sort((a,b) => (!!plannedFrom(a.id) - !!plannedFrom(b.id)) || (a.createdAt||0) - (b.createdAt||0));}
 function selectTab(k, landed){
-  const cur = ["planning","idea","info","help"].includes(S.catTab) ? S.catTab : "";
+  const cur = ["planning","idea","info","money","help"].includes(S.catTab) ? S.catTab : "";
   k = k || "";
   S.tabFrom = landed ? TRIP_TABS.findIndex(x => x[0] === k) : Math.max(0, TRIP_TABS.findIndex(x => x[0] === cur));
   S.catTab = k; S.sheet = null; S.dockHidden = false;
@@ -1563,7 +1703,9 @@ async function docShow(){
   try {
     if(/pdf/i.test(rec.mime) || /\.pdf$/i.test(rec.name)){
       if(!window.pdfjsLib) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      if(!DOCS.worker){ const w = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";   // the saved copy as a local file, so it also starts offline
+        DOCS.worker = await fetch(w).then(r => r.ok ? r.blob() : Promise.reject()).then(b => URL.createObjectURL(new Blob([b], {type:"text/javascript"}))).catch(() => w); }
+      pdfjsLib.GlobalWorkerOptions.workerSrc = DOCS.worker;
       const pdf = await pdfjsLib.getDocument({data:new Uint8Array(await rec.blob.arrayBuffer())}).promise;
       const wide = Math.min(window.innerWidth, 720) * Math.min(3, window.devicePixelRatio || 2);
       for(let p = 1; p <= Math.min(pdf.numPages, 20); p++){
@@ -1978,7 +2120,7 @@ function helpRows(date){
 async function helpRun(oneDay){
   const h = helpState(), t = S.trip; if(!t || h.step === "loading" || h.busyDay) return;
   try { localStorage.setItem(helpPrefsKey(), JSON.stringify({pace:h.pace, adults:h.adults, children:h.children, elders:h.elders, interests:h.interests, likeNote:s_(h.likeNote)})); } catch(_){}
-  const dates = oneDay && h.result ? [oneDay] : tripDates(t), note = oneDay ? s_((h.notes || {})[oneDay]) : "";
+  const dates = oneDay ? [oneDay] : tripDates(t), note = oneDay ? s_((h.notes || {})[oneDay]) : "";
   if(oneDay && h.result) h.busyDay = oneDay; else h.step = "loading";
   h.err = ""; h.ctl = new AbortController(); render();
   try {
@@ -2017,6 +2159,15 @@ async function helpFix(di,ti,fi){
   finally{tip.busy=false;if(S.help===h)render();}
 }
 
+function vAiPage(){
+  const mode = S.aiMode || "rec";
+  const seg = `<div class="ai-seg" role="tablist" style="--i:${mode === "rec" ? 0 : 1}"><button type="button" role="tab" data-act="ai-mode" data-k="rec" aria-selected="${mode === "rec"}">${ic("spark",15)}แนะนำ</button><button type="button" role="tab" data-act="ai-mode" data-k="review" aria-selected="${mode === "review"}">${ic("calendar",15)}รีวิว</button></div>`;
+  if(mode === "review") return seg + vHelpPage();
+  if(!S.aiRec || S.aiRec.tripId !== S.tripId){ let city = ""; try { city = localStorage.getItem(suggestCityKey()) || ""; } catch(_){}
+    S.aiRec = {kind:"idea-recommend", tripId:S.tripId, step:"form", cat:"sight", city:city || S.trip.destination || "", likes:{sight:[],food:[],cafe:[]}, note:"", places:[], selected:new Set(), busy:false}; }
+  const d = tripDates(S.trip)[S.day] || ""; if(S.aiRec.step === "results" && S.aiRec.date && S.aiRec.date !== "all" && S.aiRec.date !== d){ S.aiRec.step = "form"; S.aiRec.places = []; S.aiRec.selected = new Set(); }
+  return seg + vIdeaRecommend(S.aiRec, true);
+}
 function vHelpPage(){
   const h = helpState(), dates = tripDates(S.trip);
   h.notes ||= {};
@@ -2036,17 +2187,15 @@ function vHelpPage(){
       : day && day.tips.length ? day.tips.map(tipHtml).join("") : `<p class="muted small help-none">ไม่มีคำแนะนำสำหรับวันนี้</p>`;
     return wrap(`${h.err ? `<div class="err" role="alert">${esc(h.err)}</div>` : ""}
       <section class="help-day"><div class="help-day-h"><button type="button" class="help-go" data-act="help-goto" data-d="${esc(date)}"><b>วันที่ ${S.day + 1} · ${esc(dShort(date))}</b>${ic("chev",16)}</button>${day && day.summary && !busy ? `<span class="help-sum">${esc(day.summary)}</span>` : ""}</div>${body}</section>
-      <textarea class="help-note" rows="2" maxlength="300" placeholder="โน้ตถึง AI สำหรับวันนี้ เช่น อยากได้ร้านราเมน, ไม่อยากเดินเยอะ" data-bind="help:notes.${esc(date)}" aria-label="โน้ตถึง AI สำหรับวันนี้">${esc((h.notes || {})[date] || "")}</textarea>
-      <div class="help-actions"><button type="button" class="soft-btn help-again" data-act="help-ask">ปรับสไตล์ทริป</button><button type="button" class="soft-btn" data-act="help-day-run" data-d="${esc(date)}" ${h.busyDay ? "disabled" : ""}>${ic("spark",16)}ดูแผนอีกรอบ</button></div>`);
+      <textarea class="grow-area help-note" rows="1" maxlength="300" placeholder="ข้อความถึง AI เช่น ไม่อยากเดินเยอะ" data-bind="help:notes.${esc(date)}" aria-label="ข้อความถึง AI สำหรับวันนี้">${esc((h.notes || {})[date] || "")}</textarea>
+      ${helpButtons(h, date)}`);
   }
-  const counter = (k, label) => `<div class="ai-n"><span>${label}</span><div><button type="button" data-act="help-num" data-k="${k}" data-d="-1" aria-label="ลด${label}">${ic("minus",14)}</button><output>${h[k]}</output><button type="button" data-act="help-num" data-k="${k}" data-d="1" aria-label="เพิ่ม${label}">${ic("plus",14)}</button></div></div>`;
+  const date = dates[S.day] || dates[0] || "";
   return wrap(`${h.err ? `<div class="err" role="alert">${esc(h.err)}</div>` : ""}
-    <p class="muted small" style="margin:-4px 0 0">AI จะอ่านแผนทุกวัน แล้วบอกจุดที่ควรปรับ</p>
-    <div class="help-q"><b>สไตล์เที่ยว</b><div class="help-pace">${HELP_PACE.map(([k,l]) => `<button type="button" data-act="help-pace" data-k="${k}" aria-pressed="${h.pace === k}">${l}</button>`).join("")}</div></div>
-    <div class="help-q"><b>ชอบเที่ยวแนวไหน</b><div class="help-likes">${HELP_LIKES.map(v => `<button type="button" aria-pressed="${h.interests.includes(v)}" data-act="help-like" data-v="${esc(v)}">${esc(v)}</button>`).join("")}
-      <input class="help-like-in" type="text" maxlength="80" placeholder="อื่นๆ" value="${esc(h.likeNote || "")}" data-bind="help:likeNote" aria-label="แนวเที่ยวอื่นๆ"></div></div>
-    <div class="help-q"><b>ใครไปบ้าง</b><div class="ai-ns">${counter("adults","ผู้ใหญ่")}${counter("children","เด็ก")}${counter("elders","สูงอายุ")}</div></div>
-    <button type="button" class="soft-btn help-start" data-act="help-run" ${dates.length ? "" : "disabled"}>${ic("spark",18)}เริ่ม</button>`);
+    ${date ? `<textarea class="grow-area help-note" rows="1" maxlength="300" placeholder="ข้อความถึง AI เช่น ไม่อยากเดินเยอะ" data-bind="help:notes.${esc(date)}" aria-label="ข้อความถึง AI สำหรับวันนี้">${esc((h.notes || {})[date] || "")}</textarea>${helpButtons(h, date)}` : `<p class="muted small">ตั้งวันเที่ยวก่อน</p>`}`);
+}
+function helpButtons(h, date){
+  return `<div class="help-actions ai-btns"><button type="button" class="soft-btn" data-act="help-day-run" data-d="${esc(date)}" ${h.busyDay || h.step === "loading" ? "disabled" : ""}>${ic("spark",16)}วันที่ ${parseD(date).getDate()}</button><button type="button" class="soft-btn help-again" data-act="help-run" ${h.busyDay || h.step === "loading" ? "disabled" : ""}>${ic("spark",16)}ทั้งหมด</button></div>`;
 }
 /* trip days laid out as a Sunday-first calendar, 7 per row */
 /* trip days laid out as a Sunday-first calendar, 7 per row.
@@ -2085,14 +2234,14 @@ function vTrip(){
   const d = dates[S.day];
   const entries = d ? dayEntries(d) : [];
   const inRange = new Set(dates);
-  const loose = dates.length ? S.items.filter(it => it.type !== "idea" && !inRange.has(it.date) && !(it.type==="stay" && inRange.has(it.endDate))) : S.items.filter(it => it.type === "place" || it.type === "move");
+  const loose = dates.length ? S.items.filter(it => it.type !== "idea" && it.type !== "expense" && !inRange.has(it.date) && !(it.type==="stay" && inRange.has(it.endDate))) : S.items.filter(it => it.type === "place" || it.type === "move");
   const count = k => S.items.filter(i => i.type === k).length;
   const nights = S.items.filter(i => i.type==="stay" && validD(i.date) && validD(i.endDate)).reduce((s,i) => s + Math.max(0, daysBetween(i.date, i.endDate)), 0);
-  const tab = ["planning","idea","info","help"].includes(S.catTab) ? S.catTab : "";
+  const tab = ["planning","idea","info","money","help"].includes(S.catTab) ? S.catTab : "";
   const isToday = d === today(), next = isToday ? nextEntry(entries) : null;
   let page;
   // the trip name and the day calendar stay put at the top while the page scrolls under them
-  const pin = dates.length && (tab === "" || tab === "planning" || (tab === "help" && S.help && S.help.step === "result" && S.help.tripId === t.id)) ? calendar(dates) : "";
+  const pin = dates.length && (tab === "" || tab === "planning" || tab === "help") ? calendar(dates) : "";
   if(tab === "planning") page = dates.length
     ? `${vDayIdeas(S.planner||(S.planner={query:'',filter:''}))}`
     : `<div class="card empty" style="padding:22px"><p class="muted small">ตั้งวันเที่ยวก่อน แล้วค่อยเลือกสถานที่ลงแต่ละวัน</p><button class="pill-btn" data-act="trip-edit">${ic("edit",16)}ตั้งวันเที่ยว</button></div>`;
@@ -2101,7 +2250,8 @@ function vTrip(){
     page = `${ideaToolbar()}<div class="dock-body page-list" data-k="idea">${list.length?`<ul class="cat-list">${list.map(catRow).join('')}</ul>`:`<p class="muted small">ไม่พบสถานที่</p>`}</div>
       <div class="page-add-row"><button class="cat-add page-add t-idea" data-act="idea-add-manual">${ic("plus",18)}เพิ่ม</button><button class="cat-add page-add ai-pick" data-act="idea-suggest-open">${ic("spark",18)}แนะนำ</button></div>`;
   }
-  else if(tab === "help") page = vHelpPage();
+  else if(tab === "help") page = vAiPage();
+  else if(tab === "money"){ page = vExpPage(); expRateLoad(); }
   else if(tab === "info"){
     const group = (kind,label) => { const b = S.items.filter(i=>i.type===kind).sort((x,y)=>String(x.date||'').localeCompare(String(y.date||'')));
       return `<section class="booking-group card"><div class="sec-h"><h3>${label}</h3></div>${b.length?`<ul class="cat-list">${b.map(catRow).join('')}</ul>`:`<p class="muted small">ยังไม่มี${label}</p>`}</section>`; };
@@ -2124,7 +2274,7 @@ function vTrip(){
   </main>${tabBar(tab)}`;
 }
 /* the floating glass tab bar: four pages, a pill that slides to the one chosen (tap, or slide a finger along the bar) */
-const TRIP_TABS = [["","หน้าหลัก","home"],["planning","วางแผน","calendar"],["idea","ที่สนใจ","idea"],["info","ข้อมูลทริป","file"],["help","ผู้ช่วย","spark"]];
+const TRIP_TABS = [["","หน้าหลัก","home"],["planning","วางแผน","calendar"],["help","AI","spark"],["money","ค่าใช้จ่าย","wallet"],["info","ข้อมูล","file"]];
 function tabBar(tab){
   const i = Math.max(0, TRIP_TABS.findIndex(x => x[0] === tab)), from = S.tabFrom ?? i;
   return `<nav class="tabbar" aria-label="หน้าในทริป" style="--i:${from}" data-to="${i}"><span class="tab-pill" aria-hidden="true"></span>${TRIP_TABS.map(([k,l,icn],n) =>
@@ -2213,7 +2363,9 @@ function vAccount(){
     <p class="muted small" style="margin-top:-8px">${esc(S.user && S.user.email || "")}</p>
     <div class="acc-lang"><span>${ic("globe",18)}ภาษา · Language</span><button class="lang-sw${LANG === "en" ? " en" : ""}" data-act="lang-toggle" role="switch" aria-checked="${LANG === "en"}" aria-label="ภาษา · Language"><i></i><b lang="th">TH</b><b lang="en">EN</b></button></div>
     ${aiStatusRow()}
-    <details class="advanced-options" id="acc-share"><summary>แชร์สถานที่จาก Google Maps เข้า Junbi</summary>${IS_IOS ? iosSection() : androidSection()}
+    ${offlineRow()}
+    ${(() => { try { return localStorage.getItem("junbi-start-off"); } catch(_){ return null; } })() ? `<button class="acc-ai start-back" data-act="start-back"><span>${ic("check",18)}เริ่มใช้งาน Junbi</span><span class="start-go">แสดงอีกครั้ง</span></button>` : ""}
+    <details class="advanced-options" id="acc-share"${S.scOpen ? " open" : ""}><summary>แชร์สถานที่จาก Google Maps เข้า Junbi</summary>${IS_IOS ? iosSection() : androidSection()}
       <button class="link-btn other-phone" data-act="share-other">${IS_IOS ? (EN ? "On Android? See the Android steps" : "ใช้ Android? ดูวิธีของ Android") : (EN ? "On iPhone? See the iPhone steps" : "ใช้ iPhone? ดูวิธีของ iPhone")}</button></details>
     <div class="menu">
       <button data-act="guide-open">${ic("info",20)}<span class="grow">วิธีใช้ Junbi</span>${ic("chev",16)}</button>
@@ -2232,14 +2384,14 @@ const GUIDE = [   // [picture in guide/th|en, title, text]
   [2, "สร้างทริป", "กด สร้างทริป ที่หน้าแรก ใส่ชื่อทริป วันไป และวันกลับ ยังไม่รู้วันก็เว้นไว้ก่อนได้"],
   [6, "เพิ่มตั๋วเครื่องบินและที่พัก (ถ้ามี)", "เริ่มจากตรงนี้ก่อน: ในแท็บ ข้อมูลทริป กด เพิ่ม แล้วแนบไฟล์ PDF หรือรูปใบจอง แอปอ่านวันบินและวันเข้าพักให้ แผนแต่ละวันจะเริ่มจากที่พักเอง"],
   [7, "เชื่อม AI ฟรี", "การอ่านใบจองใช้ AI ครั้งแรกแอปจะชวนเชื่อม สร้างคีย์ Gemini ฟรีในบัญชี Google ของคุณแล้ววางในแอป ทำครั้งเดียวประมาณ 1 นาที"],
-  [3, "เก็บที่อยากไปจาก Google Maps", "ใน Google Maps กด แชร์ แล้ว คัดลอกลิงก์ จากนั้นในแท็บ ที่สนใจ กด เพิ่ม แล้วกด วางลิงก์ Google Maps ชื่อสถานที่จะขึ้นเอง"],
-  [4, "จัดลงแต่ละวัน", "ในแท็บ วางแผน เลือกวันจากปฏิทิน แล้วแตะสถานที่ที่จะไปวันนั้น แตะอีกครั้งเพื่อเอาออก"],
+  [3, "เก็บที่อยากไปจาก Google Maps", "ใน Google Maps กด แชร์ แล้ว คัดลอกลิงก์ จากนั้นในแท็บ วางแผน กดปุ่ม + สีเขียว แล้วกด วางลิงก์ Google Maps ชื่อสถานที่จะขึ้นเอง"],
+  [4, "จัดลงแต่ละวัน", "ในแท็บ วางแผน เลือกวันจากปฏิทิน แล้วกด + ที่สถานที่ที่จะไปวันนั้น กด ✕ เพื่อเอาออก"],
   [5, "ดูแผนและนำทาง", "หน้าหลักแสดงแผนของวันที่เลือก แตะสถานที่ แล้วกด ดูใน Google Maps เพื่อนำทางไปที่นั่น"],
   [8, "ส่งออกแผนและข้อมูลฉุกเฉิน", "ปุ่ม ••• มุมขวาบนของทริป มีส่งออกแผนเป็น PDF หรือรูป และข้อมูลฉุกเฉินของประเทศที่ไป"]
 ];
 function guideSeen(){ try { return !!localStorage.getItem(GUIDE_KEY); } catch(_){ return true; } }
 function guideOpen(i){ try { localStorage.setItem(GUIDE_KEY, "1"); } catch(_){} S.sheet = {kind:"guide", i:i || 0}; render(); }
-function guideImg(i){ return `guide/${LANG === "en" ? "en" : "th"}/${GUIDE[i][0]}.webp`; }
+function guideImg(i){ return `guide/${LANG === "en" ? "en" : "th"}/${GUIDE[i][0]}.webp?v=2`; }
 function vGuide(s){
   const n = GUIDE.length, i = Math.max(0, Math.min(n - 1, s.i || 0)), [, title, text] = GUIDE[i];
   if(i + 1 < n){ const pre = new Image(); pre.src = guideImg(i + 1); }
@@ -2386,8 +2538,8 @@ function mapsLink(it){
   if(point.placeId)q.set('query_place_id',point.placeId);
   return point.query?'https://www.google.com/maps/search/?'+q.toString():'';
 }
-function manualTravelLegs(date){
-  const entries=dayEntries(date),points=[];
+function manualTravelLegs(date,entries=dayEntries(date)){
+  const points=[];
   const arrival=entries.some(e=>!e.night&&e.it.type==='flight'&&(e.phase==='arr'||(arrDateOf(e.it)===date&&e.it.date!==date)));
   const hotel=!arrival&&stayForNight(addDays(date,-1));
   if(hotel)points.push({id:hotel.id,name:hotel.title,key:''});
@@ -2399,7 +2551,7 @@ function manualTravelLegs(date){
     }
   }
   return points.slice(1).map((to,i)=>{const from=points[i],key=JSON.stringify([from.id,from.name,to.id,to.name]);
-    const saved=S.items.find(m=>m.type==='move'&&m.date===date&&((m.data||{}).legKey===key||((m.data||{}).from===from.name&&(m.data||{}).to===to.name)));
+    const saved=S.items.find(m=>m.type==='move'&&m.date===date&&(m.data||{}).legKey===key)||S.items.find(m=>m.type==='move'&&m.date===date&&!(m.data||{}).legKey&&(m.data||{}).from===from.name&&(m.data||{}).to===to.name);
     return {date,key,from:from.name,to:to.name,fromId:from.id,toId:to.id,afterKey:from.key,beforeKey:to.key,saved};
   }).filter(l=>l.fromId!==l.toId&&s_(l.from).toLowerCase()!==s_(l.to).toLowerCase());   // no travel between two bookings of the same hotel
 }
@@ -2436,8 +2588,41 @@ function travelResultMatches(s,r){
     return parts.year+'-'+parts.month+'-'+parts.day===s.date;
   });
 }
-const travelResultsCache=new Map();
+/* route options found for each travel gap; kept on the phone so reopening the app does not search again */
+const TRAVEL_CACHE='junbi-app-travel-cache',TRAVEL_TTL=14*864e5;
+const travelResultsCache=(()=>{const m=new Map();try{const o=JSON.parse(localStorage.getItem(TRAVEL_CACHE)||'[]');for(const [k,v] of o)if(v&&Date.now()-(v.at||0)<TRAVEL_TTL)m.set(k,v);}catch(_){}
+  const set=m.set.bind(m);let t=0;m.set=(k,v)=>{set(k,{...v,at:Date.now()});while(m.size>120)m.delete(m.keys().next().value);clearTimeout(t);t=setTimeout(()=>{try{localStorage.setItem(TRAVEL_CACHE,JSON.stringify([...m]));}catch(_){}},300);return m;};return m;})();
 function travelCacheKey(leg){return JSON.stringify([S.me,S.trip.id,leg.date,leg.key,leg.from,leg.to,travelTimezone(leg)]);}
+/* find route options for every travel gap in the background, so tapping a gap shows choices at once; re-runs when places are added or moved */
+const travelPrefetch={timer:0,busy:false,failed:new Set()};
+/* Junbi: route options come from the person's own Gemini key, so they are not fetched in the background
+   (that would use up the free quota); options looked up once are kept on the phone and open instantly */
+function scheduleTravelPrefetch(){}
+async function runTravelPrefetch(){
+  if(travelPrefetch.busy||!CONNECTED||!navigator.onLine||S.view!=='trip'||!S.trip||!S.items)return;
+  const dates=tripDates(S.trip),here=Math.max(0,S.day||0),min=addDays(today(),-6);
+  const order=[...dates.slice(here),...dates.slice(0,here)].filter(d=>d>=min);
+  const tripId=S.trip.id,me=S.me;
+  travelPrefetch.busy=true;
+  try{
+    for(const date of order){
+      for(const leg of manualTravelLegs(date)){
+        if(S.trip?.id!==tripId||S.me!==me)return;
+        if(!leg.from||!leg.to)continue;
+        const key=travelCacheKey(leg);if(travelResultsCache.has(key)||travelPrefetch.failed.has(key))continue;
+        if(S.sheet?.kind==='travel-leg'&&S.sheet.cacheKey===key&&(S.sheet.lookup||S.sheet.lookupBusy))continue;
+        const sd=leg.saved?.data||{},q={date:leg.date,time:leg.saved?.time||travelDepartureHint(leg),timezone:sd.timezone||travelTimezone(leg),mode:sd.mode||'ขนส่งสาธารณะ'};
+        try{
+          const result=await api('travelOptions',{ai:false,tripId,...q,fromId:leg.fromId,toId:leg.toId,from:leg.from,to:leg.to});
+          if(!travelResultMatches(q,result))throw {code:'travel_date_mismatch'};
+          travelResultsCache.set(key,{result,selectedIndex:leg.saved?(result.routes||[]).findIndex(r=>travelModeFor(r)===sd.mode&&r.minutes===Number(sd.durationMinutes)):-1});
+          const sh=S.sheet;if(sh?.kind==='travel-leg'&&sh.cacheKey===key&&!sh.lookup&&!sh.lookupBusy&&!sh.chosen){sh.lookup=result;sh.time=result.time;sh.lookupKey=travelQueryKey(sh);sh.lookupError='';render();}
+        }catch(e){travelPrefetch.failed.add(key);if(['travel_quota','offline','not_connected','auth_required','travel_maps_unavailable'].includes(e?.code))return;}
+        await new Promise(r=>setTimeout(r,600));
+      }
+    }
+  }finally{travelPrefetch.busy=false;}
+}
 function travelQueryKey(s){return JSON.stringify([s.tripId,s.date,s.key,s.time,s.timezone,s.mode]);}
 function vTravelResults(s){
   if(s.lookupBusy)return '<p class="muted small" role="status">กำลังหาเส้นทาง…</p>';
@@ -2472,30 +2657,30 @@ function applyTravelChoice(ai,index){
 }
 
 function openTravelSheet(leg){
-  const d=leg.saved?.data||{};S.sheet={kind:'travel-leg',tripId:S.trip.id,date:leg.date,key:leg.key,mode:d.mode||'ขนส่งสาธารณะ',minutes:d.durationMinutes??'',time:leg.saved?.time||travelDepartureHint(leg),note:leg.saved?.sub||'',timezone:d.timezone||travelTimezone(leg),travelSource:d.travelSource||'',travelCheckedAt:d.travelCheckedAt||'',chosen:!!leg.saved,approximateRoutes:true,departTime:leg.saved?.time||'',cacheKey:travelCacheKey(leg)};const cached=travelResultsCache.get(S.sheet.cacheKey);if(cached){S.sheet.lookup=cached.result;S.sheet.time=cached.result.time;S.sheet.lookupKey=travelQueryKey(S.sheet);if(cached.selectedIndex>=0)applyTravelChoice(false,cached.selectedIndex);else render();}else{render();lookupTravel();}
+  const d=leg.saved?.data||{};S.sheet={kind:'travel-leg',tripId:S.trip.id,date:leg.date,key:leg.key,memo:d.memo||'',mode:d.mode||'ขนส่งสาธารณะ',minutes:d.durationMinutes??'',time:leg.saved?.time||travelDepartureHint(leg),note:leg.saved?.sub||'',timezone:d.timezone||travelTimezone(leg),travelSource:d.travelSource||'',travelCheckedAt:d.travelCheckedAt||'',chosen:!!leg.saved,approximateRoutes:true,departTime:leg.saved?.time||'',cacheKey:travelCacheKey(leg)};const cached=travelResultsCache.get(S.sheet.cacheKey);if(cached){S.sheet.lookup=cached.result;S.sheet.time=cached.result.time;S.sheet.lookupKey=travelQueryKey(S.sheet);if(cached.selectedIndex>=0)applyTravelChoice(false,cached.selectedIndex);else render();}else{render();lookupTravel();}
 }
 function editManualTravel(it){
   if(!it?.data?.legKey)return false;const leg=manualTravelLegs(it.date).find(l=>l.saved?.id===it.id);if(!leg)return false;openTravelSheet(leg);return true;
 }
 function vTravelLeg(s){
   const leg=manualTravelLegs(s.date).find(l=>l.key===s.key);if(!leg)return `<div class="scrim" data-act="close-sheet"><div class="sheet"><p>ลำดับสถานที่เปลี่ยนแล้ว</p><button class="btn ghost" data-act="close-sheet">ปิด</button></div></div>`;
-  return `<div class="scrim" data-act="close-sheet"><div class="sheet lean-travel" role="dialog" aria-modal="true" aria-label="บันทึกการเดินทาง" data-stop="1"><div class="hd"><h2 class="travel-points">${esc(briefName(leg.from))} → ${esc(briefName(leg.to))}</h2><button class="round" data-act="close-sheet" aria-label="ปิด" ${s.busy?'disabled':''}>${ic('close')}</button></div><form class="stack" data-form="travel-leg" id="travel-leg-form"><small class="muted">${esc(dLong(s.date))}</small>${vTravelResults(s)}${s.chosen&&!s.lookup&&!s.lookupBusy?`<div class="travel-chosen"><b>${esc(s.mode)}${s.minutes?' · '+esc(s.minutes)+' นาที':''}</b>${s.note?`<small>${esc(s.note)}</small>`:''}</div>`:''}</form><div class="travel-actions"><button class="btn primary travel-save" type="submit" form="travel-leg-form" ${!s.chosen||s.busy?'disabled':''}>${s.busy?'กำลังบันทึก…':'บันทึก'}</button><a class="btn ghost maps-travel-link" href="${esc(routeLink({type:'move',data:{from:leg.from,to:leg.to}}).replace('&dir_action=navigate',''))}" target="_blank" rel="noopener">เปิด Google Maps${ic('ext',16)}</a></div></div></div>`;
+  return `<div class="scrim" data-act="close-sheet"><div class="sheet lean-travel" role="dialog" aria-modal="true" aria-label="บันทึกการเดินทาง" data-stop="1"><div class="hd"><h2 class="travel-points">${esc(briefName(leg.from))} → ${esc(briefName(leg.to))}</h2><button class="round" data-act="close-sheet" aria-label="ปิด" ${s.busy?'disabled':''}>${ic('close')}</button></div><form class="stack" data-form="travel-leg" id="travel-leg-form"><small class="muted">${esc(dLong(s.date))}</small>${vTravelResults(s)}${s.chosen&&!s.lookup?`<div class="travel-chosen"><b>${esc(s.mode)}${s.minutes?' · '+esc(s.minutes)+' นาที':''}</b>${s.note?`<small>${esc(s.note)}</small>`:''}</div>`:''}<textarea class="grow-area help-note travel-memo" id="travel-memo" rows="1" maxlength="200" placeholder="โน้ต เช่น Hikari 507 · ออก 10:03 · รถ 7 ที่ 12A" data-bind="sheet:memo" aria-label="โน้ตการเดินทาง">${esc(s.memo||'')}</textarea></form><div class="travel-actions"><button class="btn primary travel-save" type="submit" form="travel-leg-form" ${(!s.chosen&&!s_(s.memo))||s.busy?'disabled':''}>${s.busy?'กำลังบันทึก…':'บันทึก'}</button><a class="btn ghost maps-travel-link" href="${esc(routeLink({type:'move',data:{from:leg.from,to:leg.to}}).replace('&dir_action=navigate',''))}" target="_blank" rel="noopener">เปิด Google Maps${ic('ext',16)}</a></div></div></div>`;
 }
 
 async function saveTravelLeg(){
   const s=S.sheet,t=S.trip;if(s?.kind!=='travel-leg'||s.busy||t?.id!==s.tripId)return;
-  if(!s.chosen&&!s.manualOpen){toast('เลือกเส้นทางหรือกรอกเองก่อน');return;}
+  if(!s.chosen&&!s.manualOpen&&!s_(s.memo)){toast('เลือกเส้นทางหรือใส่โน้ตก่อน');return;}
   const leg=manualTravelLegs(s.date).find(l=>l.key===s.key);if(!leg){toast('ลำดับสถานที่เปลี่ยนแล้ว');return;}
   const minutes=s_(s.minutes)===''?null:Number(s.minutes);
   if(minutes!==null&&(!Number.isInteger(minutes)||minutes<1||minutes>1440)){toast('ระบุเวลาระหว่าง 1–1440 นาที');return;}
-  const data={from:leg.from,to:leg.to,mode:s.mode,durationMinutes:minutes,legKey:leg.key,legFromId:leg.fromId,legToId:leg.toId,timezone:s.timezone||'',travelSource:s.travelSource||'',travelCheckedAt:s.travelCheckedAt||''};
+  const data={from:leg.from,to:leg.to,mode:s.mode,durationMinutes:minutes,legKey:leg.key,legFromId:leg.fromId,legToId:leg.toId,timezone:s.timezone||'',travelSource:s.travelSource||'',travelCheckedAt:s.travelCheckedAt||'',memo:s_(s.memo)};
   s.busy=true;render();
   try{
     let id=leg.saved?.id;
     const patch={type:'move',date:s.date,time:s.approximateRoutes?(s.departTime||''):(s.time||''),title:moveTitle(leg.from,leg.to),sub:s_(s.note),data,source:'manual'};
     if(id)await store.updateItem(t.id,id,patch);else id=await store.addItem(t.id,{...patch,createdBy:S.me,createdAt:Date.now()});
     if(S.trip?.id===t.id){
-      const entries=dayEntries(s.date).filter(e=>!e.night),move=entries.find(e=>e.it.id===id),keys=entries.filter(e=>e.it.id!==id).map(dayEntryKey);
+      const entries=dayEntries(s.date).filter(e=>!e.night&&!e.start),move=entries.find(e=>e.it.id===id),keys=entries.filter(e=>e.it.id!==id).map(dayEntryKey);
       if(move){const before=keys.indexOf(leg.beforeKey),after=keys.indexOf(leg.afterKey),at=before>=0?before:after>=0?after+1:keys.length;keys.splice(at,0,dayEntryKey(move));saveDayRowOrder(s.date,keys,t.id);}
       if(S.sheet===s)S.sheet=null;toast('บันทึกการเดินทางแล้ว');
     }
@@ -2512,45 +2697,20 @@ function itemLinks(it){
   if(it.sourceText) out.push(`<button class="lnk" data-act="show-source">${ic("file",20)}<span class="grow">ข้อความใบจอง</span>${ic("chev",16)}</button>`);
   return out.length ? `<div class="links">${out.join("")}</div>` : "";
 }
-/* a memo goes into the daily plan as a place on the chosen day; the memo stays in the list, ticked */
-function planBox(it, s){
-  const p = plannedFrom(it.id), dates = tripDates(S.trip);
-  if(p) return `<div class="plan-done"><span class="grow"><b>อยู่ในแผนแล้ว</b><br><span class="small muted">${esc(dShort(p.date))}${p.time ? " · " + esc(p.time) : ""}</span></span>
-    <button class="soft-btn" data-act="plan-goto">ดูในแผน ${ic("chev",16)}</button></div>`;
-  if(s.planDate === undefined) s.planDate = dates[S.day] || dates[0] || "";
-  if(s.planTime === undefined) s.planTime = "";
-  if(!dates.length) return "";
-  const i = dates.indexOf(s.planDate);
-  return `<div class="plan-quick"><b>เพิ่มลงแผน</b>
-    <div class="plan-days" role="group" aria-label="เลือกวัน">${dates.map((x,n) => `<button type="button" data-act="plan-day" data-d="${x}" aria-pressed="${x===s.planDate}" aria-label="${esc(dLong(x))}">${parseD(x).getDate()}</button>`).join("")}</div>
-    <div class="plan-go"><label class="plan-time">${ic("clock",18)}<span class="tp-wrap"><input id="pl-time" type="time" required value="${esc(s.planTime)}" data-bind="sheet:planTime" aria-label="เวลา (ไม่ใส่ก็ได้)"><span class="tp" aria-hidden="true">--:--</span></span></label>
-    <button class="soft-btn" data-act="plan-idea" ${S.planAdding?"disabled":""}>${ic("plus",18)}${S.planAdding?"กำลังเพิ่ม…":`เพิ่มลงวันที่ ${s.planDate ? parseD(s.planDate).getDate() + " " + MON[parseD(s.planDate).getMonth()] : ""}`}</button></div></div>`;
-}
-async function planIdea(){
-  const s = S.sheet, t = S.trip, it = s && S.items.find(i => i.id === s.id); if(!it || !t || S.planAdding) return;
-  if(plannedFrom(it.id)){toast("สถานที่นี้อยู่ในแผนแล้ว");return;}
-  if(!validD(s.planDate)){ toast("เลือกวันก่อนนะ"); return; }
-  const d = it.data || {};
-  S.planAdding=it.id;render();
-  try{
-    await store.addItem(t.id, {type:"place", date:s.planDate, time:s.planTime||"", title:it.title, sub:it.sub||"",
-      data:{address:d.address||"", lat:d.lat, lon:d.lon, geoFrom:d.geoFrom||"", placeId:d.placeId||"", mapsUrl:d.mapsUrl||"", kind:d.kind||"", fromIdea:it.id}, createdBy:S.me, createdAt:Date.now(), source:"idea"});
-    if(S.trip?.id===t.id){const i=tripDates(t).indexOf(s.planDate);if(i>=0)S.day=i;if(S.sheet===s)S.sheet=null;}
-    toast("เพิ่มลงแผน " + dShort(s.planDate) + " แล้ว");
-  } catch(err){ fail(err); }finally{S.planAdding=null;render();}
-}
 function plannerIdeas(s){
   const query=(s.query||'').trim().toLocaleLowerCase();
   return S.items.filter(i=>i.type==='idea'&&(!s.filter||(i.data||{}).kind===s.filter)&&(!query||(briefName(i.title)+' '+(i.data||{}).kind).toLocaleLowerCase().includes(query)));
 }
 function vDayIdeaRows(s){
-  const date=tripDates(S.trip)[S.day];
-  return plannerIdeas(s).map(i=>{const selected=S.items.some(p=>p.type==='place'&&p.date===date&&(p.data||{}).fromIdea===i.id);
-    return `<button class="ai-priority picker-choice" data-act="planner-toggle" data-id="${esc(i.id)}" aria-pressed="${selected}" ${PLAN_TOGGLES.has(S.trip.id+':'+date+':'+i.id)?'disabled':''}><span class="thumb-sm ${kindTone(i)}" aria-hidden="true">${ic(itemIcon(i),16)}</span><span class="grow">${esc(briefName(i.title))}</span></button>`;
-  }).join('')||'<p class="muted small">ไม่มีสถานที่</p>';
+  const date=tripDates(S.trip)[S.day],list=plannerIdeas(s);
+  const on=i=>S.items.some(p=>p.type==='place'&&p.date===date&&(p.data||{}).fromIdea===i.id), busy=i=>PLAN_TOGGLES.has(S.trip.id+':'+date+':'+i.id)?'disabled':'';
+  const inDay=list.filter(on),rest=list.filter(i=>!on(i));
+  const row=(i,act)=>`<div class="pick-row ${kindTone(i)}"><button class="pick-name" data-act="item" data-id="${esc(i.id)}"><span class="pick-ic" aria-hidden="true">${ic(itemIcon(i),18)}</span><span class="grow">${esc(briefName(i.title))}</span></button>${act}</div>`;
+  return `${inDay.length?`<div class="pick-day">${inDay.map(i=>row(i,`<button class="pick-x" data-act="planner-toggle" data-id="${esc(i.id)}" aria-label="เอาออกจากวันนี้" ${busy(i)}>${ic('close',15)}</button>`)).join('')}</div>`:''}
+    <div class="pick-rest">${rest.map(i=>row(i,`<button class="pick-plus" data-act="planner-toggle" data-id="${esc(i.id)}" aria-label="ลงวันนี้" ${busy(i)}>${ic('plus',16)}</button>`)).join('')}</div>${list.length?'':'<p class="muted small">ไม่มีสถานที่</p>'}`;
 }
 function vDayIdeas(s){
-  return `<section class="day-picker compact-picker planner-picker" aria-label="เลือกสถานที่ของวันนี้"><div class="picker-toolbar"><div class="chips picker-filters" aria-label="หมวดสถานที่">${['',...IDEA_KINDS].map(k=>`<button data-act="planner-filter" data-k="${esc(k)}" aria-pressed="${(s.filter||'')===k}">${esc(k||'ทั้งหมด')}</button>`).join('')}</div><button class="picker-search" data-act="planner-search" aria-label="${s.searchOpen?'ซ่อนช่องค้นหา':'ค้นหาสถานที่'}" aria-expanded="${!!s.searchOpen}">${ic('search',19)}</button></div>${s.searchOpen?`<div class="planner-search-field"><input id="day-ideas-search" class="workflow-search" type="text" role="searchbox" inputmode="search" enterkeyhint="search" aria-label="ค้นหาสถานที่" placeholder="ค้นหา" value="${esc(s.query||'')}" data-day-search="1"></div>`:''}<div class="picker-list">${vDayIdeaRows(s)}</div></section>`;
+  return `<section class="day-picker compact-picker planner-picker" aria-label="เลือกสถานที่ของวันนี้"><div class="picker-toolbar"><div class="chips picker-filters" aria-label="หมวดสถานที่">${['',...IDEA_KINDS].map(k=>`<button data-act="planner-filter" data-k="${esc(k)}" aria-pressed="${(s.filter||'')===k}">${esc(k||'ทั้งหมด')}</button>`).join('')}</div><button class="picker-search picker-add" data-act="idea-add-manual" aria-label="เพิ่มสถานที่">${ic('plus',20)}</button></div><div class="picker-list">${vDayIdeaRows(s)}</div></section>`;
 }
 const PLAN_TOGGLES=new Set();
 async function togglePlannerIdea(id){
@@ -2587,34 +2747,40 @@ function openIdeaRecommend(){
   S.sheet={kind:'idea-recommend',step:'form',cat:'sight',city:city||t.destination||'',likes:{sight:[],food:[],cafe:[]},note:'',places:[],selected:new Set(),busy:false};
   render();
 }
-function vIdeaRecommend(s){
+function vIdeaRecommend(s, inline){
+  const bind = inline ? "aiRec" : "sheet", box = (label, cls, inner) => inline ? `<section class="ai-rec-inline" aria-label="${label}">${inner}</section>` : `<div class="scrim${cls.includes("steady") ? " still" : ""}" data-act="close-sheet"><div class="sheet compose-sheet idea-compose-sheet${cls}" role="dialog" aria-modal="true" aria-label="${label}" data-stop="1">${head}${inner}</div></div>`;
   const C=SUGGEST_CATS[s.cat]||SUGGEST_CATS.sight;
-  const head=`<div class="hd"><h2>${s.step==='results'?`${esc(C.label)} ที่น่าไป`:'หาไอเดีย'}</h2><button type="button" class="round" data-act="close-sheet" aria-label="ปิด">${ic('close')}</button></div>`;
+  const head=inline?'':`<div class="hd"><h2>${s.step==='results'?`${esc(C.label)} ที่น่าไป`:'หาไอเดีย'}</h2><button type="button" class="round" data-act="close-sheet" aria-label="ปิด">${ic('close')}</button></div>`;
   if(s.step==='results'){
     const rows=s.places.map(p=>{const id=p._id,chosen=s.selected.has(id),exists=inTrip(p.title);return `<button type="button" class="picker-choice idea-suggest-row" data-act="idea-suggest-toggle" data-id="${esc(id)}" aria-pressed="${chosen}" ${exists?'disabled':''}><span class="thumb-sm ${IDEA_TONE[p.kind]||'k-sight'}" aria-hidden="true">${ic(IDEA_ICON[p.kind]||'pin',16)}</span><span class="grow"><b>${esc(p.title)}</b><span class="muted small">${esc(exists?'อยู่ในทริปแล้ว':[p.area,p.reason].filter(Boolean).join(' · '))}</span></span><span aria-hidden="true">${exists||chosen?'✓':'+'}</span></button>`;}).join('');
-    return `<div class="scrim" data-act="close-sheet"><div class="sheet compose-sheet idea-compose-sheet" role="dialog" aria-modal="true" aria-label="เลือกไอเดีย" data-stop="1">${head}
+    return box("เลือกไอเดีย", "", `
       <div class="stack idea-compose-body idea-suggest-results">
       ${rows}
       ${s.more?`<div class="ai-wait small-wait"><div class="spinner" role="status" aria-label="กำลังหาเพิ่ม"></div></div>`:`<button type="button" class="soft-btn help-start suggest-btn" data-act="idea-suggest-more">${ic('spark',16)}หาเพิ่ม</button>`}
       ${s.err?`<div class="err" role="alert">${esc(s.err)}</div>`:''}
-      <div class="grid2"><button type="button" class="btn ghost" data-act="idea-suggest-edit">ย้อนกลับ</button><button type="button" class="soft-btn suggest-ok" data-act="idea-suggest-save" ${s.busy||!s.selected.size?'disabled':''}>${s.busy?'กำลังบันทึก…':s.selected.size?`ตกลง (${s.selected.size})`:'ตกลง'}</button></div></div></div></div>`;
+      <div class="grid2"><button type="button" class="btn ghost" data-act="idea-suggest-edit">ย้อนกลับ</button><button type="button" class="soft-btn suggest-ok" data-act="idea-suggest-save" ${s.busy||!s.selected.size?'disabled':''}>${s.busy?'กำลังบันทึก…':s.selected.size?`ตกลง (${s.selected.size})`:'ตกลง'}</button></div></div>`);
   }
-  if(s.step==='loading')return `<div class="scrim" data-act="close-sheet"><div class="sheet compose-sheet idea-compose-sheet" role="dialog" aria-modal="true" aria-label="กำลังหาไอเดีย" data-stop="1">${head}<div class="ai-wait"><div class="spinner" role="status" aria-label="กำลังค้นหา"></div><p>กำลังหา${esc(C.label)}ยอดนิยม 10 ที่…</p><button type="button" class="link-btn" data-act="idea-suggest-cancel">ยกเลิก</button></div></div></div>`;
+  if(s.step==='loading')return box("กำลังหาไอเดีย", "", `<div class="ai-wait"><div class="spinner" role="status" aria-label="กำลังค้นหา"></div><p>กำลังหา${esc(C.label)}ที่น่าไป…</p><button type="button" class="link-btn" data-act="idea-suggest-cancel">ยกเลิก</button></div>`);
   const likes=s.likes[s.cat]||[];
-  return `<div class="scrim still" data-act="close-sheet"><div class="sheet compose-sheet idea-compose-sheet steady" role="dialog" aria-modal="true" aria-label="หาไอเดีย" data-stop="1">${head}
+  return box("หาไอเดีย", " steady", `
     <form class="stack idea-compose-body" data-form="idea-recommend">
       <div class="chips t-idea suggest-cats">${Object.entries(SUGGEST_CATS).map(([k,c])=>`<button type="button" class="${IDEA_TONE[c.kind]}" aria-pressed="${s.cat===k}" data-act="idea-suggest-cat" data-k="${k}">${ic(IDEA_ICON[c.kind],18)}${esc(c.label)}</button>`).join('')}</div>
-      <label class="fld">เมืองที่จะไป<input required maxlength="160" placeholder="เช่น โตเกียว, คามาคุระ" value="${esc(s.city)}" data-bind="sheet:city"></label>
-      <div class="stack"><b>แนวที่ชอบ</b><div class="chips">${C.likes.map(v=>`<button type="button" aria-pressed="${likes.includes(v)}" data-act="idea-suggest-like" data-v="${esc(v)}">${esc(v)}</button>`).join('')}</div></div>
-      <label class="fld">อยากได้แบบไหนเพิ่มเติม<textarea class="grow-area idea-note" rows="2" maxlength="1000" placeholder="เช่น ใกล้สถานีชินางาวะ ไม่ต้องต่อคิวนาน มีเด็กเล็กไปด้วย" data-bind="sheet:note">${esc(s.note)}</textarea></label>
+      ${inline ? "" : `<label class="fld">เมืองที่จะไป<input required maxlength="160" placeholder="เช่น โตเกียว, คามาคุระ" value="${esc(s.city)}" data-bind="${bind}:city"></label>`}
+      ${inline ? "" : `<div class="stack"><b>แนวที่ชอบ</b><div class="chips">${C.likes.map(v=>`<button type="button" aria-pressed="${likes.includes(v)}" data-act="idea-suggest-like" data-v="${esc(v)}">${esc(v)}</button>`).join('')}</div></div>`}
+      ${inline ? `<textarea class="grow-area help-note" rows="1" maxlength="1000" placeholder="ข้อความถึง AI เช่น มีเด็กเล็กไปด้วย" data-bind="${bind}:note" aria-label="ข้อความถึง AI">${esc(s.note)}</textarea>` : `<label class="fld">อยากได้แบบไหนเพิ่มเติม<textarea class="grow-area idea-note" rows="2" maxlength="1000" placeholder="เช่น ใกล้สถานีชินางาวะ ไม่ต้องต่อคิวนาน มีเด็กเล็กไปด้วย" data-bind="${bind}:note">${esc(s.note)}</textarea></label>`}
       ${s.err?`<div class="err" role="alert">${esc(s.err)}</div>`:''}
-      <button class="soft-btn help-start suggest-btn" type="submit" ${s.busy?'disabled':''}>${ic('spark',18)}เริ่ม</button>
-    </form></div></div>`;
+      ${inline && tripDates(S.trip).length ? `<div class="help-actions ai-btns"><button type="button" class="soft-btn" data-act="ai-rec-run" data-d="${esc(tripDates(S.trip)[S.day] || "")}" ${s.busy ? "disabled" : ""}>${ic("spark",16)}วันที่ ${parseD(tripDates(S.trip)[S.day] || tripDates(S.trip)[0]).getDate()}</button><button type="button" class="soft-btn help-again" data-act="ai-rec-run" data-d="all" ${s.busy ? "disabled" : ""}>${ic("spark",16)}ทั้งหมด</button></div>`
+        : `<button class="soft-btn help-start suggest-btn" type="submit" ${s.busy?'disabled':''}>${ic('spark',18)}เริ่ม</button>`}
+    </form>`);
 }
 /* redraw without the list jumping back to the top */
 function keepScroll(sel, fn){ const y = document.querySelector(sel)?.scrollTop || 0; fn(); const el = document.querySelector(sel); if(el) el.scrollTop = y; }
+function recS(){return S.sheet?.kind==='idea-recommend'?S.sheet:(S.aiRec&&S.aiRec.tripId===S.tripId&&S.catTab==='help'?S.aiRec:null);}
 async function runIdeaRecommend(more){
-  const s=S.sheet,t=S.trip;if(!s||s.kind!=='idea-recommend'||s.busy||s.more||!t)return;
+  const s=recS(),t=S.trip;if(!s||s.kind!=='idea-recommend'||s.busy||s.more||!t)return;
+  if(s===S.aiRec&&!s_(s.city)){   // the AI tab never asks for a city: take it from the trip, or from the places/stays in the plan
+    const d=s.scope&&s.scope!=='all'?s.scope:'',from=S.items.filter(i=>(i.type==='place'||i.type==='stay')&&(!d||i.date===d||i.type==='stay'&&i.date<=d&&d<(i.endDate||i.date)));
+    s.city=s_(t.destination)||from.map(i=>s_((i.data||{}).address)).find(Boolean)||from.map(i=>s_(i.title)).find(Boolean)||s_(t.name);}
   s.city=s_(s.city);if(!s.city){s.err='ใส่เมืองก่อนครับ';render();return;}
   if(!more){s.places=[];s.selected=new Set();}
   // never suggest what is already in the trip, or what was just shown
@@ -2622,24 +2788,26 @@ async function runIdeaRecommend(more){
   if(more)s.more=true;else{s.busy=true;s.step='loading';}
   s.err='';s.ctl=new AbortController();if(more)keepScroll(".idea-suggest-results",render);else render();
   try{
-    const res=await planCall(s,'recommendIdeas',{tripId:t.id,city:s.city,prefs:{category:s.cat,interests:s.likes[s.cat]||[],note:s_(s.note).slice(0,1000),exclude}},()=>S.sheet===s&&S.trip?.id===t.id);
-    if(S.sheet!==s||S.trip?.id!==t.id)return;
-    const fresh=(res.places||[]).filter(p=>!inTrip(p.title)&&!s.places.some(q=>sameTitle(q.title,p.title)));
+    if(s===S.aiRec)s.date=s.scope||tripDates(t)[S.day]||'';
+    const res=await planCall(s,'recommendIdeas',{tripId:t.id,city:s.city,prefs:{category:s.cat,interests:s.likes[s.cat]||[],note:s_(s.note).slice(0,1000),exclude,...(s===S.aiRec&&s.date?{date:s.date}:{})}},()=>recS()===s&&S.trip?.id===t.id);
+    if(recS()!==s||S.trip?.id!==t.id)return;
+    const fresh=(res.places||[]).filter(p=>!inTrip(p.title)&&!s.places.some(q=>sameTitle(q.title,p.title))).slice(0,s===S.aiRec?(s.date==='all'?5:3):10);
     const base=s.places.length;s.places=s.places.concat(fresh.map((p,i)=>({...p,_id:'p'+(base+i)})));s.step='results';
     if(more&&!fresh.length)s.err='ไม่มีที่ใหม่เพิ่มแล้ว ลองปรับคำขอดูครับ';
-  }catch(e){if(S.sheet!==s)return;if(!more)s.step='form';s.err=e?.code==='need_destination'?'ใส่เมืองก่อนครับ':e?.code==='cancelled'?'':aiErr(e);}
-  finally{if(S.sheet===s){s.busy=false;s.more=false;more?keepScroll(".idea-suggest-results",render):render();}}
+  }catch(e){if(recS()!==s)return;if(!more)s.step='form';s.err=e?.code==='need_destination'?'ใส่เมืองก่อนครับ':e?.code==='cancelled'?'':aiErr(e);}
+  finally{if(recS()===s){s.busy=false;s.more=false;more?keepScroll(".idea-suggest-results",render):render();}}
 }
 async function saveIdeaRecommendations(){
-  const s=S.sheet,t=S.trip;if(!s||s.kind!=='idea-recommend'||s.step!=='results'||s.busy||!t)return;
+  const s=recS(),t=S.trip;if(!s||s.kind!=='idea-recommend'||s.step!=='results'||s.busy||!t)return;
   const chosen=s.places.filter(p=>s.selected.has(p._id)&&!inTrip(p.title));
   if(!chosen.length)return;s.busy=true;render();
   try{
-    for(const p of chosen){if(S.trip?.id!==t.id||S.sheet!==s)throw {code:'cancelled'};
+    for(const p of chosen){if(S.trip?.id!==t.id||recS()!==s)throw {code:'cancelled'};
+      // no Google Places here: the name and area the AI gave, and a Google Maps search link for that name
       await store.addItem(t.id,{type:'idea',date:'',time:'',title:p.title,sub:s_(p.area).slice(0,120),
         data:{kind:IDEA_TONE[p.kind]?p.kind:'ที่เที่ยว',gchecked:0,address:p.area||'',recommendedFor:s.city,mapsUrl:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent([p.title,p.area,s.city].filter(Boolean).join(', '))},createdBy:S.me,createdAt:Date.now(),source:'ai'});}
-    if(S.sheet===s){S.sheet=null;S.catTab='idea';toast(`เพิ่ม ${chosen.length} แห่งแล้ว ตรวจชื่อสถานที่ใน Google Maps ก่อนเดินทางนะครับ`);}
-  }catch(e){if(e?.code!=='cancelled')fail(e);}finally{if(S.sheet===s){s.busy=false;render();}}
+    if(recS()===s){if(S.sheet===s)S.sheet=null;else{s.step='form';s.places=[];s.selected=new Set();}S.catTab='planning';toast(`เพิ่ม ${chosen.length} แห่งแล้ว ตรวจชื่อสถานที่ใน Google Maps ก่อนเดินทางนะครับ`);}
+  }catch(e){if(e?.code!=='cancelled')fail(e);}finally{if(recS()===s){s.busy=false;render();}}
 }
 window.addEventListener('resize',fitPlannerPanel);
 window.addEventListener('scroll',fitPlannerPanel,{passive:true});
@@ -2742,7 +2910,7 @@ function syncCopy(){
   if(C.outbox.length)return !navigator.onLine?'ออฟไลน์ · รอส่ง '+C.outbox.length+' รายการ':flushing?'กำลังบันทึก '+C.outbox.length+' รายการ…':'รอส่ง '+C.outbox.length+' รายการ';
   return S.directSaving?'กำลังบันทึกแผน…':!navigator.onLine?'ออฟไลน์ · ข้อมูลที่บันทึกแล้วอยู่ในเครื่อง':'บันทึกแล้ว';
 }
-function vSyncError(){return S.localSaveError||C.outbox.some(o=>o.error)?`<button id="sync-state" class="sync-state sync-error" role="status" aria-live="polite" data-act="sync-retry">${esc(syncCopy())}</button>`:'';}
+function vSyncError(){return S.localSaveError||C.outbox.some(o=>o.error)?`<button id="sync-state" class="sync-state sync-error" role="status" aria-live="polite" data-act="sync-retry">${esc(syncCopy())}</button>`:!navigator.onLine?`<span class="off-chip" role="status">${ic('wifiOff',14)}${esc(syncCopy())}</span>`:'';}
 function updateSync(){const slot=document.getElementById('sync-slot');if(slot)slot.innerHTML=vSyncError();}
 function vSync(){return `<span id="sync-slot">${vSyncError()}</span>`;}
 
@@ -3016,6 +3184,8 @@ function vSheet(){
   if(s.kind === "sos") return vSos(s);
   if(s.kind === "sos-doctor") return vSosDoctor();
   if(s.kind === "travel-leg")return vTravelLeg(s);
+  if(s.kind === "copy-share")return vCopyShare(s);
+  if(s.kind === "copy-in")return vCopyIn(s);
   if(s.kind === "idea-recommend")return vIdeaRecommend(s);
   if(s.kind === "day-ideas") return "";
   if(s.kind === "trip-menu") return vTripMenu(s);
@@ -3024,6 +3194,8 @@ function vSheet(){
   if(s.kind === "share-in") return vShareIn(s);
   if(s.kind === "account") return vAccount();
   if(s.kind === "ai-setup") return vAiSetup(s);
+  if(s.kind === "install") return vInstall();
+  if(s.kind === "exp-add") return vExpAdd(s);
   if(s.kind === "export") return vExport(s);
   if(s.kind === "clear") return vClear(s);
   const t = S.trip;
@@ -3044,9 +3216,9 @@ function vSheet(){
     return `<div class="scrim" data-act="close-sheet"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(it.title)}" data-stop="1">
       <div class="hd"><span class="thumb tc ${toneOf(it)}">${ic(itemIcon(it))}</span><h2>${esc(it.type==='idea'?briefName(it.title):it.title)}</h2><button class="round" data-act="close-sheet" aria-label="ปิด">${ic("close")}</button></div>
       <div>${rows.map(r => `<div class="kv"><span>${esc(r[0])}</span><span>${Array.isArray(r[1]) ? r[1].map(esc).join("<br>") : esc(r[1])}</span></div>`).join("")}</div>
-      ${it.type === "idea" ? planBox(it, s) : ""}
       ${itemLinks(it)}
-      <button class="btn ghost item-edit-visible" data-act="item-edit">${ic("edit",17)}แก้ไขรายละเอียด</button>
+      ${it.type === "idea" ? `<div class="grid2 idea-btns"><button class="soft-btn" data-act="item-edit">${ic("edit",17)}แก้ไข</button><button class="soft-btn idea-del${s.delAsk ? " ask" : ""}" data-act="idea-del">${ic("trash",17)}${s.delAsk ? "ลบเลย" : "ลบ"}</button></div>`
+        : `<button class="btn ghost item-edit-visible" data-act="item-edit">${ic("edit",17)}แก้ไขรายละเอียด</button>`}
     </div></div>`;
   }
   const isMove = s.kind === "move";
@@ -3086,27 +3258,38 @@ function vSheet(){
 
 /* ---------- render ---------- */
 let overlayScrollY=null;
+let pinShift=0;   // the pinned trip header stops sticking while the page is held still, so hold it where it was
+function holdPin(){const tt=document.querySelector('.trip-top');if(tt&&pinShift){tt.style.position='relative';tt.style.top=pinShift+'px';}}
 function lockOverlayPage(locked){
   const body=document.body;
-  if(locked&&overlayScrollY===null){overlayScrollY=window.scrollY;body.style.position='fixed';body.style.top=-overlayScrollY+'px';body.style.left='0';body.style.right='0';body.style.width='100%';}
-  else if(!locked&&overlayScrollY!==null){const y=overlayScrollY;overlayScrollY=null;body.style.position='';body.style.top='';body.style.left='';body.style.right='';body.style.width='';window.scrollTo({top:y,behavior:'instant'});}
+  if(locked&&overlayScrollY===null){const tt=document.querySelector('.trip-top'),was=tt?tt.getBoundingClientRect().top:0;
+    overlayScrollY=window.scrollY;body.style.position='fixed';body.style.top=-overlayScrollY+'px';body.style.left='0';body.style.right='0';body.style.width='100%';
+    pinShift=0;if(tt){const fix=n=>requestAnimationFrame(()=>{const t=document.querySelector('.trip-top');if(!t||overlayScrollY===null)return;const d=Math.round(was-t.getBoundingClientRect().top);if(Math.abs(d)>1){pinShift+=d;holdPin();}if(n)fix(n-1);});fix(2);}}
+  else if(locked)holdPin();
+  else if(!locked&&overlayScrollY!==null){pinShift=0;const tt=document.querySelector('.trip-top');if(tt){tt.style.position='';tt.style.top='';}const y=overlayScrollY;overlayScrollY=null;body.style.position='';body.style.top='';body.style.left='';body.style.right='';body.style.width='';window.scrollTo({top:y,behavior:'instant'});}
 }
+const TOUCH_UI=matchMedia('(pointer:coarse)').matches;   // phones: the time wheel is open while its field has focus
 function render(){
   if(S.view === "home" && !S.sheet && S.token && !guideSeen()){ try { localStorage.setItem(GUIDE_KEY, "1"); } catch(_){} S.sheet = {kind:"guide", i:0}; }
+  /* the phone's time wheel closes if the screen is redrawn under it (sync, clock): wait until it closes */
+  if(TOUCH_UI&&document.activeElement?.classList?.contains('time-pick')){render.pending=true;return;}
+  if(S.view==='trip')scheduleTravelPrefetch();
   const views = {login:vLogin, home:vHome, new:vNew, invite:vInvite, trip:vTrip, upload:vUpload, review:vReview, join:vJoin};
   const v = views[S.view];
   const active = document.activeElement && document.activeElement.id;
   /* keep the scroll position of the bottom panel and of sheets when the screen is redrawn */
   const keep = [".dock-body", ".sheet", ".picker-list"].map(sel => { const el = document.querySelector(sel); return el ? [sel, el.scrollTop, el.dataset.k || ""] : null; }).filter(Boolean);
+  const pageKey = S.view + "/" + (S.catTab || "") + "/" + (S.tripId || ""), pageY = overlayScrollY === null && pageKey === render.key ? window.scrollY : null; render.key = pageKey;   // a redraw of the same page stays where it was
   document.getElementById("app").innerHTML = (v ? v() : `<div class="load muted">กำลังโหลด…</div>`)
     + (["trip","home"].includes(S.view) ? vSheet() : "")
     + (S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : "");
   if(active){ const el = document.getElementById(active); if(el && el.focus) el.focus({preventScroll:true}); }
   keep.forEach(([sel, y, k]) => { const el = document.querySelector(sel); if(el && y && (el.dataset.k || "") === k) el.scrollTop = y; });
+  if(pageY && Math.abs(window.scrollY - pageY) > 2) window.scrollTo({top: pageY, behavior: "instant"});
   const modalSheet=S.view==="upload"||(S.sheet&&S.sheet.kind!=="day-ideas");
-  document.body.style.overflow = modalSheet ? "hidden" : "";
   const overlayLocked=!!modalSheet;
-  document.documentElement.classList.toggle("lock",overlayLocked);lockOverlayPage(overlayLocked);
+  lockOverlayPage(overlayLocked);document.documentElement.classList.toggle("lock",overlayLocked);   // measure the pinned header before anything stops the page scrolling
+  document.body.style.overflow = modalSheet ? "hidden" : "";
   if(S.sheet && S.sheet.kind === "doc") docMount();
   fitAreas(); updateSync();fitPlannerPanel();
 }
@@ -3342,9 +3525,10 @@ document.addEventListener("input", e => {
   const [root, path] = b.split(":");
   if(root === "root") S[path] = (e.target.type === "checkbox" ? e.target.checked : e.target.value); else if(S[root]) setPath(S[root], path, e.target.type === "checkbox" ? e.target.checked : e.target.value);
   if(e.target.classList.contains("grow-area")){ fitAreas(e.target); if(!e.target.closest(".steady")) e.target.scrollIntoView({block:"nearest"}); }
+  if(root==='sheet'&&S.sheet?.kind==='travel-leg'&&path==='memo'){const b=document.querySelector('.travel-save');if(b&&!S.sheet.busy)b.disabled=!S.sheet.chosen&&!s_(S.sheet.memo);}
   if(root==='sheet'&&S.sheet?.kind==='travel-leg'&&path==='departTime'){S.sheet.time=S.sheet.departTime||'09:00';S.sheet.lookup=null;}
   if(root==='sheet'&&S.sheet?.kind==='travel-leg'&&['time','timezone','mode'].includes(path)){S.sheet.lookup=null;S.sheet.lookupError='';S.sheet.travelSource='';S.sheet.travelCheckedAt='';}
-  if(root==='sheet'&&S.sheet?.kind==='idea-recommend'&&path==='city'){try{localStorage.setItem(suggestCityKey(),e.target.value);}catch(_){}}
+  if((root==='aiRec'||root==='sheet'&&S.sheet?.kind==='idea-recommend')&&path==='city'){try{localStorage.setItem(suggestCityKey(),e.target.value);}catch(_){}}
   if(e.target.dataset.rerender) render();
   if(e.target.dataset.suggest !== undefined && e.isTrusted) suggestSoon(e.target);
 });
@@ -3491,7 +3675,7 @@ document.addEventListener("focusout", e => {
   setTimeout(() => { if(Date.now() - sugHold > 800) closeSuggest(); else setTimeout(closeSuggest, 900); }, 150);
 });
 /* the shortcut section stays open (and the sheet keeps its scroll) when a toast re-renders the account sheet */
-document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='sc-sec')S.scOpen=e.target.open;},true);
+document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='acc-share')S.scOpen=e.target.open;},true);
 /* today's AI use, shown on the profile sheet */
 async function aiStatusLoad(){ if(!CONNECTED || !S.token) return; try { S.aiStatus = await api("aiStatus", {}); if(S.sheet && S.sheet.kind === "account") render(); } catch(_){} }
 function aiStatusRow(){
@@ -3500,6 +3684,135 @@ function aiStatusRow(){
   return `<div class="acc-ai"><span>${ic("spark",18)}AI วันนี้</span><span class="ai-badge ${full ? "full" : "ok"}">${linked ? full ? "โควตาเต็ม · ลองภายหลัง" : "พร้อมใช้" : "ยังไม่เชื่อม"}</span><small class="muted">ใช้ในเครื่องนี้ ${n} ครั้ง</small></div>`;
 }
 /* iPhone: no share target for web apps, so a Shortcut opens Junbi with ?add=<the shared Maps link> */
+/* without internet: the plan is always on the phone; booking files are once the trip has been opened online */
+function offlineRow(){
+  let id = S.tripId; if(!id) try { id = localStorage.getItem("junbi-app-last-trip"); } catch(_){}
+  const t = id && C.trips[id]; if(!t) return "";
+  const files = [...new Set(itemList(id).flatMap(itemFiles))], got = files.filter(f => DOCS.have.has(f)).length, ready = got >= files.length;
+  return `<div class="acc-ai"><span>${ic("wifiOff",18)}ใช้ตอนไม่มีเน็ต</span><span class="ai-badge ${ready ? "ok" : "full"}">${ready ? "พร้อม" : "ยังไม่ครบ"}</span><small class="muted">${esc(t.name || "ทริป")} · แผนอยู่ในเครื่องแล้ว${files.length ? ` · ใบจอง ${got}/${files.length} ไฟล์` : ""}${ready ? "" : " · เปิดทริปตอนมีเน็ตสักครู่ แอปจะเก็บให้ครบ"}</small></div>`;
+}
+/* first steps for a new member: put the app on the home screen, connect sharing, ready offline */
+const INSTALL = {prompt:null, done:false};
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); INSTALL.prompt = e; });
+window.addEventListener("appinstalled", () => { INSTALL.done = true; INSTALL.prompt = null; });
+const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
+const onHomeScreen = () => INSTALL.done || navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+function vStart(tripId){
+  let off = false, shared = false; try { off = !!localStorage.getItem("junbi-app-start-off"); shared = !!localStorage.getItem("junbi-app-share-on"); } catch(_){}
+  if(off) return "";
+  if(!DOCS.keysRead){ DOCS.keysRead = true; docKeys().then(k => { if(k.length){ k.forEach(x => DOCS.have.add(x)); render(); } }); }
+  const files = tripId ? [...new Set(itemList(tripId).flatMap(itemFiles))] : [], got = files.filter(f => DOCS.have.has(f)).length;
+  const steps = [
+    {done: onHomeScreen(), title: "เพิ่ม Junbi ไว้หน้าจอ", sub: "เปิดเร็วเหมือนแอป ใช้ได้แม้ไม่มีเน็ต", act: "start-install", btn: INSTALL.prompt ? "ติดตั้ง" : "ดูวิธี"},
+    {done: shared, title: "เชื่อมปุ่มแชร์", sub: "แชร์สถานที่ / ตั๋วจากแอปอื่นเข้าทริป", act: "start-share", btn: "เชื่อมต่อ"},
+    {done: got >= files.length, title: "พร้อมใช้ตอนไม่มีเน็ต", sub: got >= files.length ? "แผนและใบจองอยู่ในเครื่องแล้ว" : `ใบจอง ${got}/${files.length} ไฟล์ · เปิดทริปตอนมีเน็ตสักครู่`, act: "", btn: ""}
+  ];
+  const n = steps.filter(x => x.done).length;
+  if(n === steps.length) return "";
+  return `<section class="start-card" aria-label="เริ่มใช้งาน">
+    <div class="start-hd"><b>เริ่มใช้งาน Junbi</b><span class="start-n">${n}/${steps.length}</span></div>
+    <div class="start-bar"><i style="width:${Math.round(n / steps.length * 100)}%"></i></div>
+    ${steps.map(x => `<div class="start-row${x.done ? " done" : ""}"><span class="start-ck">${x.done ? ic("check",14) : ""}</span><span class="grow"><b>${x.title}</b><small>${esc(x.sub)}</small></span>${!x.done && x.act ? `<button class="start-go" data-act="${x.act}">${x.btn}</button>` : ""}</div>`).join("")}
+    <button class="link-btn start-skip" data-act="start-skip">ข้ามไปก่อน</button>
+  </section>`;
+}
+function vInstall(){
+  const ios = isIOS(), share = `<svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M6 11H5v10h14V11h-1"/></svg>`;
+  const steps = ios
+    ? [["กดปุ่ม " + share + " แชร์", "อยู่แถบล่างของ Safari"], ["เลื่อนลงหา <b>เพิ่มไปยังหน้าจอโฮม</b>", "Add to Home Screen"], ["กด <b>เพิ่ม</b> มุมขวาบน", "ไอคอน Junbi จะอยู่บนหน้าจอ"]]
+    : [["กดเมนู <b>⋮</b> มุมขวาบนของ Chrome", ""], ["กด <b>ติดตั้งแอป</b> หรือ <b>เพิ่มลงในหน้าจอหลัก</b>", "Install app / Add to Home screen"], ["กด <b>ติดตั้ง</b>", "ไอคอน Junbi จะอยู่บนหน้าจอ"]];
+  return `<div class="scrim" data-act="close-sheet"><div class="sheet" role="dialog" aria-modal="true" aria-label="เพิ่ม Junbi ไว้หน้าจอ" data-stop="1">
+    <div class="hd"><h2>เพิ่มไว้หน้าจอ</h2><button class="round" data-act="close-sheet" aria-label="ปิด">${ic("close")}</button></div>
+    ${steps.map((x, i) => `<div class="sc-step"><span class="sc-n">${i + 1}</span><div class="sc-body"><b>${x[0]}</b>${x[1] ? `<small class="muted">${x[1]}</small>` : ""}</div></div>`).join("")}
+    ${ios ? `<p class="muted small">ใช้ได้ใน Safari · ถ้าเปิดจากแอปอื่น (LINE ฯลฯ) ให้กด "เปิดใน Safari" ก่อน</p>` : ""}
+  </div></div>`;
+}
+/* trip wallet: anyone writes down what they paid (what, currency, amount); split at the end */
+const CUR_OF = {JP:"JPY",KR:"KRW",TW:"TWD",CN:"CNY",HK:"HKD",SG:"SGD",MY:"MYR",VN:"VND",ID:"IDR",PH:"PHP",US:"USD",GB:"GBP",AU:"AUD",CH:"CHF",FR:"EUR",DE:"EUR",IT:"EUR",ES:"EUR",NL:"EUR",AT:"EUR"};
+const CUR_SIGN = {JPY:"¥",THB:"฿",USD:"$",EUR:"€",GBP:"£",KRW:"₩",CNY:"¥",TWD:"NT$",HKD:"HK$",SGD:"S$",MYR:"RM",VND:"₫",IDR:"Rp",PHP:"₱",AUD:"A$",CHF:"CHF "};
+const money = (n, c) => (CUR_SIGN[c] || c + " ") + Math.round(+n || 0).toLocaleString("en-US");
+const expItems = () => S.items.filter(i => i.type === "expense").sort((a, b) => ((b.data || {}).at || 0) - ((a.data || {}).at || 0));
+const expLocal = () => { const c = tripCountry(); return (c && CUR_OF[c[0]]) || "JPY"; };
+function expTotals(list){ const t = {}; list.forEach(i => { const d = i.data || {}; t[d.cur] = (t[d.cur] || 0) + (+d.amount || 0); }); return t; }
+const totalsText = t => Object.entries(t).sort((a, b) => a[0] === "THB" ? 1 : b[0] === "THB" ? -1 : 0).map(([c, n]) => money(n, c)).join(" + ") || "—";
+function vExpPage(){
+  const list = expItems(), t = expTotals(list), s = S.expUI || (S.expUI = {pick:""});
+  const view = expViewCur(), loc = expLocal(), r = fxRate(loc), c = list.length ? expCalc() : null;
+  const share = c && !c.missing.length ? `<div class="exp-each">${c.all.map(u => { const v = fxConv(c.owe[u] || 0, "THB", view); return `<span><i>${esc(expName(u))}</i><b>${esc(money(v == null ? c.owe[u] || 0 : v, v == null ? "THB" : view))}</b></span>`; }).join("")}</div>` : "";
+  return `<section class="exp-page">
+    <div class="exp-total"><div class="exp-total-top"><span class="exp-total-sum"><small>รวมทั้งทริป</small><b>${esc(expOne(t, view))}</b></span>
+      <div class="exp-total-row">${expCurSeg(view, "exp-view", null, true)}${loc !== "THB" && r ? `<span class="exp-rate">1${esc((CUR_SIGN[loc] || loc).trim())} ≈ ${esc(String(+r.toFixed(r < 1 ? 4 : 2)))}฿</span>` : ""}</div></div>
+      ${share}<div class="exp-mini"><button type="button" class="exp-mini-line" data-act="exp-line" ${list.length ? "" : "disabled"}>${ic("share",17)}แชร์ทาง LINE</button><button type="button" class="exp-mini-add" data-act="exp-add">${ic("edit",17)}จด</button></div>
+    </div>
+    ${list.length ? `<ul class="exp-list">${list.map(i => expRow(i, s, true)).join("")}</ul>` : `<p class="muted small" style="text-align:center;padding:24px 0">ยังไม่มีรายการ กด "จด" เพื่อเริ่ม</p>`}
+  </section>`;
+}
+const EXP_TONES = [["#E0ECFF","#2B61B2"],["#FCE4EC","#B83A68"],["#E2F5E2","#2F7A2E"],["#F1E5F6","#6A3A86"],["#FFE8D6","#B4501A"],["#DCF1F3","#18767F"]];
+const expTone = u => { const k = expPeople().indexOf(u), t = EXP_TONES[(k < 0 ? 0 : k) % EXP_TONES.length]; return `background:${t[0]};color:${t[1]}`; };
+function expRow(i, s, swipe){
+  const d = i.data || {}, all = expPeople(), who = expSplitOf(i, all), open = s.pick === i.id, key = "x:" + i.id, ask = S.delAsk === key;
+  const row = `<button type="button" class="exp-row" data-act="exp-pick" data-id="${esc(i.id)}" aria-expanded="${open}"><span class="grow"><b>${esc(i.title || "ไม่ระบุ")}</b> <small>· ${swipe ? esc(expName(d.by)) + " · " + esc(expWhen(d.at)) : esc(expName(d.by)) + " จ่าย · " + (who.length === all.length ? `หารทุกคน (${who.length})` : `หาร ${who.length} คน`)}</small></span><span class="exp-amt">${esc(money(d.amount, d.cur))}</span></button>`;
+  const people = open ? `<div class="exp-who">${all.map(u => { const on = who.includes(u), n = expName(u); return `<button type="button" class="${on ? "on" : ""}" data-act="exp-who" data-u="${esc(u)}" aria-pressed="${on}"><span class="exp-av" style="${on ? expTone(u) : ""}">${esc(trText(n).slice(0, 1).toUpperCase())}</span><span class="exp-av-n">${esc(n)}</span></button>`; }).join("")}</div>` : "";
+  if(!swipe) return `<li class="${open ? "open" : ""}">${row}${people}</li>`;
+  return `<li class="${open ? "open" : ""}"><div class="trow erow${S.swipeOpen === key ? " open" : ""}${ask ? " ask" : ""}" data-row="${esc(key)}" data-w="108">
+    <div class="trow-actions">${ask ? `<button class="sw-btn sw-yes" data-act="entry-del-yes" data-id="${esc(i.id)}">ลบเลย</button>`
+      : `<button class="sw-btn sw-edit" data-act="exp-add" data-id="${esc(i.id)}" aria-label="แก้ไข">${ic("edit",18)}</button><button class="sw-btn sw-del" data-act="entry-del" data-key="${esc(key)}" aria-label="ลบ">${ic("trash",18)}</button>`}</div>
+    <div class="trow-slide">${row}</div></div>${people}</li>`;
+}
+function expWhen(at){ if(!at) return ""; const d = new Date(at); return d.toLocaleDateString("th-TH", {day:"numeric", month:"short"}) + " " + d.toTimeString().slice(0, 5); }
+function vExpAdd(s){
+  const it = s.id ? S.items.find(i => i.id === s.id) : null, d = (it && it.data) || {};
+  let last = ""; try { last = localStorage.getItem("junbi-app-cur") || ""; } catch(_){}
+  const local = expLocal(), curs = local === "THB" ? ["THB"] : [local, "THB"], cur = d.cur || (curs.includes(last) ? last : curs[0]);
+  return `<div class="scrim" data-act="close-sheet"><div class="sheet" role="dialog" aria-modal="true" aria-label="จดค่าใช้จ่าย" data-stop="1">
+    <form data-form="exp" class="stack exp-form" autocomplete="off">
+      <div class="exp-amt-box"><label for="exp-amt" class="muted small">จำนวนเงิน</label>
+        <input id="exp-amt" class="exp-big" name="amount" inputmode="decimal" required placeholder="0" value="${d.amount != null ? esc(String(d.amount)) : ""}">
+        ${curs.length > 1 ? expCurSeg(cur, "exp-cur", curs) : ""}<input type="hidden" name="cur" value="${esc(cur)}"></div>
+      <label class="exp-what"><span class="muted small">ค่าอะไร</span><input id="exp-what" name="what" maxlength="60" placeholder="เช่น ราเมน, ตั๋วรถไฟ" value="${esc(it ? it.title || "" : "")}"></label>
+      <p class="muted small" style="margin:-6px 0 0">บันทึกในชื่อ ${esc(it ? expName(d.by) : (S.myName || "ฉัน"))}</p>
+      <div class="exp-actions"><button type="button" class="exp-btn exp-btn-back" data-act="exp-cancel">${ic("close",19)}ยกเลิก</button><button type="submit" class="exp-btn exp-btn-add">${ic("check",19)}บันทึก</button></div>
+    </form>
+  </div></div>`;
+}
+async function expSave(f){
+  const amount = parseFloat(String(f.elements.amount.value).replace(/[, ]/g, "")), cur = f.elements.cur.value, title = f.elements.what.value.trim();
+  if(!(amount > 0)){ toast("ใส่จำนวนเงินก่อน"); return; }
+  try { localStorage.setItem("junbi-app-cur", cur); } catch(_){}
+  const s = S.sheet;
+  if(s.id) await store.updateItem(S.trip.id, s.id, {title, data:{amount, cur}});
+  else await store.addItem(S.trip.id, {type:"expense", title, data:{amount, cur, by:S.me, byName:S.myName || "", at:Date.now(), split:null}, createdBy:S.me, createdAt:Date.now()});
+  toast(s.id ? "แก้แล้ว" : "จดแล้ว"); S.sheet = null; render();
+}
+/* splitting: everyone in the trip by default; per item you can pick fewer people */
+function expPeople(){ const ids = [...(S.trip.memberIds || [])]; expItems().forEach(i => { const b = (i.data || {}).by; if(b && !ids.includes(b)) ids.push(b); }); return ids.length ? ids : [S.me]; }
+function expSplitOf(it, all){ const sp = (it.data || {}).split; const ok = Array.isArray(sp) ? sp.filter(u => all.includes(u)) : []; return ok.length ? ok : all; }
+const expName = u => { if(u === S.me && S.myName) return S.myName; if(u === S.me) return "ฉัน"; const it = S.items.find(i => i.type === "expense" && (i.data || {}).by === u && (i.data || {}).byName); return it ? it.data.byName : nameOf(u); };
+const CUR_TH = {JPY:"เยน", THB:"บาท", USD:"ดอลลาร์", EUR:"ยูโร", KRW:"วอน", CNY:"หยวน", TWD:"ดอลลาร์ไต้หวัน", GBP:"ปอนด์"};
+function expCurSeg(on, act, list, short){ const l = list || (expLocal() === "THB" ? ["THB"] : [expLocal(), "THB"]); return `<span class="exp-seg" role="group" style="--n:${l.length};--i:${Math.max(0, l.indexOf(on))}">${l.map(c => `<button type="button" class="${c === on ? "on" : ""}" data-act="${act}" data-cur="${c}" aria-pressed="${c === on}">${esc((CUR_SIGN[c] || "").trim() || c)}${short ? "" : " " + esc(CUR_TH[c] || c)}</button>`).join("")}</span>`; }
+const expViewCur = () => { let v = ""; try { v = localStorage.getItem("junbi-app-exp-view") || ""; } catch(_){} return v === "THB" || v === expLocal() ? v : expLocal(); };
+if(!S.fxLive) try { S.fxLive = JSON.parse(localStorage.getItem("junbi-app-fx") || "{}"); } catch(_){ S.fxLive = {}; }
+const fxRate = c => c === "THB" ? 1 : +((S.fxLive || {})[c] || ((S.trip.fx || {})[c]) || 0);
+function segSlide(el){ const g = el.closest(".exp-seg"), bs = [...g.querySelectorAll("button")]; g.style.setProperty("--i", bs.indexOf(el)); bs.forEach(b => { b.classList.toggle("on", b === el); b.setAttribute("aria-pressed", b === el); }); }
+function expOne(tt, view){ view = view || expViewCur(); let sum = 0; for(const [c, n] of Object.entries(tt)){ const v = fxConv(n, c, view); if(v == null) return totalsText(tt); sum += v; } return money(sum, view); }
+const fxConv = (n, from, to) => { if(from === to) return +n || 0; const a = fxRate(from), b = fxRate(to); return a && b ? (+n || 0) * a / b : null; };
+async function expRateLoad(){
+  const need = [...new Set([expLocal(), ...expItems().map(i => (i.data || {}).cur)])].filter(c => c && c !== "THB");
+  if(!need.length || !navigator.onLine || Date.now() - (S.fxAt || 0) < 3600e3) return;
+  try { const r = await fetch("https://open.er-api.com/v6/latest/THB").then(r => r.json()); const out = {}; need.forEach(c => { const v = r.rates && r.rates[c]; if(v) out[c] = Math.round(1 / v * 10000) / 10000; });
+    S.fxAt = Date.now(); S.fxLive = {...(S.fxLive || {}), ...out}; try { localStorage.setItem("junbi-app-fx", JSON.stringify(S.fxLive)); } catch(_){} render(); } catch(_){}
+}
+function expCalc(){
+  const all = expPeople(), paid = {}, owe = {}; all.forEach(u => { paid[u] = 0; owe[u] = 0; });
+  let total = 0, missing = new Set();
+  expItems().forEach(i => { const d = i.data || {}, r = fxRate(d.cur); if(!r){ missing.add(d.cur); return; } const v = (+d.amount || 0) * r; total += v;
+    paid[d.by] = (paid[d.by] || 0) + v; const who = expSplitOf(i, all); who.forEach(u => owe[u] = (owe[u] || 0) + v / who.length); });
+  const bal = Object.keys(paid).map(u => ({u, v: paid[u] - (owe[u] || 0)}));
+  const give = bal.filter(x => x.v < -0.5).sort((a, b) => a.v - b.v), get = bal.filter(x => x.v > 0.5).sort((a, b) => b.v - a.v), moves = [];
+  let i = 0, j = 0; while(i < give.length && j < get.length){ const m = Math.min(-give[i].v, get[j].v); moves.push({from: give[i].u, to: get[j].u, v: m}); give[i].v += m; get[j].v -= m; if(give[i].v > -0.5) i++; if(get[j].v < 0.5) j++; }
+  return {all, paid, owe, total, moves, missing:[...missing]};
+}
+function expPlanText(){ const c = expCalc(), v = expViewCur(), m = n => { const x = fxConv(n, "THB", v); return x == null ? money(n, "THB") : money(x, v); }; return [`${S.trip.name} · ค่าใช้จ่ายรวม ${m(c.total)}`, ...c.all.map(u => `${expName(u)} ${m(c.owe[u] || 0)}`)].join("\n"); }
 const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const IOS_SHORTCUT = "";   // iCloud link of the ready-made "Junbi" shortcut; empty = show the build-it-yourself steps
 const ADD_BASE = location.origin + location.pathname + "?add=";
@@ -3600,10 +3913,11 @@ function vShareIn(s){
     <div class="hd"><h2>ส่งเข้าทริปไหน?</h2><button class="round" data-act="close-sheet" aria-label="ปิด">${ic("close")}</button></div>${body}</div></div>`;
 }
 /* one-tap shortcut install: copy the private key first, then let the link open the signed shortcut */
-document.addEventListener('click',e=>{const a=e.target.closest?.('a.sc-get');if(!a)return;const k=a.dataset.key||'';try{navigator.clipboard.writeText(k).then(()=>toast('คัดลอกรหัสแล้ว ถ้า iPhone ถามรหัสให้กดวาง')).catch(()=>{});}catch(_){}});
+document.addEventListener('click',e=>{const a=e.target.closest?.('a.sc-get');if(!a)return;try{localStorage.setItem('junbi-app-share-on','1');}catch(_){}const k=a.dataset.key||'';try{navigator.clipboard.writeText(k).then(()=>toast('คัดลอกรหัสแล้ว ถ้า iPhone ถามรหัสให้กดวาง')).catch(()=>{});}catch(_){}});
 /* tap the time in the day plan: the phone's time picker, saved when it closes (Done) */
 document.addEventListener('focusout',e=>{
   const el=e.target;if(!el.classList?.contains('time-pick'))return;
+  if(render.pending){render.pending=false;setTimeout(()=>{if(!document.activeElement?.classList?.contains('time-pick'))render();},50);}
   const it=S.items.find(i=>i.id===el.dataset.timeId),t=S.trip,f=el.dataset.timeField==='endTime'?'endTime':'time';
   /* leaving last night's hotel: the time is kept per day on that stay */
   const lv=/^leave:(\d{4}-\d\d-\d\d)$/.exec(el.dataset.timeField||'');
@@ -3771,13 +4085,24 @@ document.addEventListener("pointerup", endSwipe);
 document.addEventListener("pointercancel", endSwipe);
 document.addEventListener("click", e => { if(SW.suppress && e.target.closest(".trow-slide")){ e.preventDefault(); e.stopImmediatePropagation(); SW.suppress = false; } }, true);
 document.addEventListener("keydown", e => { if(e.key === "Escape" && S.sheet){ S.sheet.ctl?.abort();S.sheet = null; render(); } });
+{ let sx = null, sg = null;
+  document.addEventListener("pointerdown", e => { sg = e.target.closest && e.target.closest(".exp-total .exp-seg"); sx = sg ? e.clientX : null; });
+  document.addEventListener("pointerup", e => { if(!sg || sx == null) return; const dx = e.clientX - sx, g = sg; sg = null; sx = null; if(Math.abs(dx) < 12) return;
+    const bs = [...g.querySelectorAll("button")], cur = bs.findIndex(b => b.classList.contains("on")), to = Math.max(0, Math.min(bs.length - 1, cur + (dx > 0 ? 1 : -1)));
+    S.segSwiped = true; setTimeout(() => { S.segSwiped = false; }, 400); if(to === cur) return; const b = bs[to];
+    try { localStorage.setItem("junbi-app-exp-view", b.dataset.cur); } catch(_){} segSlide(b); setTimeout(render, 280); }); }
+document.addEventListener("change", e => { const x = e.target.closest && e.target.closest("[data-fx]"); if(!x || !S.trip) return; const v = parseFloat(x.value); const fx = {...(S.trip.fx || {})}; if(v > 0) fx[x.dataset.fx] = v; else delete fx[x.dataset.fx]; store.updateTrip(S.trip.id, {fx}); render(); });
 document.addEventListener("submit", async e => {
   if(e.target && e.target.dataset && e.target.dataset.form === "ai-key"){ e.preventDefault(); const k = findAiKey(S.sheet && S.sheet.key); if(!k){ S.sheet.err = "ยังไม่ใช่คีย์ Gemini ลองคัดลอกจาก Google AI Studio ใหม่"; render(); return; } aiTry(k); return; }
   if(e.target.dataset.form==='travel-leg'){e.preventDefault();await saveTravelLeg();return;}
+  if(e.target.dataset.form==='copy-in'){e.preventDefault();await confirmCopy();return;}
   if(e.target.dataset.form==='sos'){e.preventDefault();await sosSave();return;}
+  if(e.target.dataset.form==='exp'){e.preventDefault();await expSave(e.target);return;}
   const f = e.target.dataset && e.target.dataset.form; if(!f) return;
   e.preventDefault();
-  if(f === "join") return startJoin(S.joinCode);
+  if(f === "join"){ const cp = String(S.joinCode || "").toLowerCase().match(/(?:^|[^a-f0-9])([a-f0-9]{24})(?![a-f0-9])/);   // a plan code (also inside a pasted message)
+    if(cp){ S.joinCode = ""; return startCopy(cp[1]); }
+    toast("รหัสแผนไม่ถูกต้อง ลองคัดลอกจากข้อความของเพื่อนอีกครั้ง"); return; }
   if(f === "invite") return sendInvite();
   if(f === "review") return saveReview(false);
   if(f === "idea-recommend") return runIdeaRecommend();
@@ -3820,7 +4145,7 @@ document.addEventListener("submit", async e => {
       try{
         await store.addItem(t.id, {type:"idea", date:"", time:"", title:s.title.trim(), sub:s.note.trim(),
           data:{kind:s.ideaKind||"ที่เที่ยว", address:s.address||"", originalMapsName:s.originalMapsName||"", lat:s.lat, lon:s.lon, geoFrom:s.geoFrom||"", placeId:s.placeId||"", mapsUrl:s.mapsUrl||""}, createdBy:S.me, createdAt:Date.now(), source:"manual"});
-        S.sheet = null; S.catTab = "idea"; render(); toast("จดไว้แล้ว");
+        S.sheet = null; S.catTab="planning"; render(); toast("จดไว้แล้ว");
       } catch(err){ fail(err); }
       return;
     }
@@ -3833,6 +4158,8 @@ document.addEventListener("submit", async e => {
     } catch(err){ fail(err); }
   }
 });
+/* a tap elsewhere finishes editing a time (desktop Safari keeps focus in the field after a click) */
+document.addEventListener("pointerdown", e => { const a = document.activeElement; if(a?.classList?.contains("time-pick") && e.target !== a) a.blur(); }, true);
 document.addEventListener("click", async e => {
   const el = e.target.closest("[data-act]");
   if(el?.classList.contains("scrim")&&e.target.closest("[data-stop]"))return;
@@ -3854,23 +4181,16 @@ document.addEventListener("click", async e => {
       openTrip(el.dataset.id); break;
     case "trip": if(S.view === "upload" && S.upload && S.upload.ctl) S.upload.ctl.abort(); go("trip"); break;
     case "invite": go("invite"); break;
-    case "step": {
-      const k = el.dataset.k, v = S.newTrip[k] + Number(el.dataset.d);
-      S.newTrip[k] = Math.max(Number(el.dataset.min), Math.min(Number(el.dataset.max), v)); render(); break; }
     case "cal-week": S.calWeek = Math.max(0, (S.calWeek ?? Math.floor((parseD(tripDates(t)[0]).getDay() + S.day) / 7)) + Number(el.dataset.d)); render(); break;
     case "cal-open": S.calOpen = !S.calOpen; S.calWeek = null; render(); break;
     case "day": S.calOpen = false; S.calWeek = null; if(S.sheet?.kind==='day-ideas'&&S.sheet.busy)break;S.day = Math.max(0,Math.min(tripDates(t).length-1,Number(el.dataset.i)||0));if(S.sheet?.kind==='day-ideas')S.sheet.date=tripDates(t)[S.day];if(!["planning","help"].includes(S.catTab))S.catTab="";S.dockHidden=false;S.clearAsk = null;render();break;
     case "trip-more": S.sheet={kind:"trip-more"};render();break;
     case "lang-toggle": el.classList.toggle("en"); setTimeout(() => setLang(LANG === "en" ? "th" : "en"), 220); break;
     case "tab": selectTab(el.dataset.k); break;
-    case "help-pace": S.help.pace = el.dataset.k; render(); break;
-    case "help-num": { const h = S.help, k = el.dataset.k; h[k] = Math.max(0, Math.min(20, h[k] + Number(el.dataset.d))); if(h.adults + h.elders < 1) h[k] = 1; render(); break; }
     case "help-run": helpRun(); break;
     case "help-day-run": helpRun(el.dataset.d); break;
-    case "help-ask": S.help.step = "ask"; S.help.err = ""; render(); break;
     case "help-stop": if(S.help && S.help.ctl) S.help.ctl.abort(); break;
     case "help-fix": helpFix(Number(el.dataset.i), Number(el.dataset.j), el.dataset.f != null ? Number(el.dataset.f) : undefined); break;
-    case "help-like": { const h = S.help, v = el.dataset.v; h.interests = h.interests.includes(v) ? h.interests.filter(x => x !== v) : [...h.interests, v]; render(); break; }
     case "help-goto": { const i = tripDates(t).indexOf(el.dataset.d); if(i >= 0) S.day = i; selectTab(""); break; }
     case "trip-edit": { const tr=S.trip; S.sheet={kind:"trip-edit",name:tr.name||"",destination:tr.destination||"",start:tr.planStart||tr.startDate||"",end:tr.planEnd||(tr.startDate&&tr.days?addDays(tr.startDate,tr.days-1):"")}; render(); break; }
     case "upload": S.upload = {kind:"auto", status:"idle"}; go("upload"); break;
@@ -3902,27 +4222,41 @@ document.addEventListener("click", async e => {
     case "ideas-search": S.ideaSearchOpen=!S.ideaSearchOpen;if(!S.ideaSearchOpen)S.ideaQuery='';render();if(S.ideaSearchOpen)document.getElementById('ideas-search')?.focus({preventScroll:true});break;
     case "idea-add-manual": {const dates=tripDates(t);S.sheet={kind:'idea',title:'',date:dates[S.day]||dates[0],time:'',note:'',mode:'',from:'',to:'',ideaKind:'ที่เที่ยว'};render();break;}
     case "idea-suggest-open": openIdeaRecommend();break;
-    case "idea-suggest-cat": {const s=S.sheet;if(s?.kind==='idea-recommend'&&SUGGEST_CATS[el.dataset.k]){s.cat=el.dataset.k;s.err='';render();}break;}
-    case "idea-suggest-like": {const s=S.sheet;if(s?.kind==='idea-recommend'){const l=s.likes[s.cat]||(s.likes[s.cat]=[]),v=el.dataset.v;s.likes[s.cat]=l.includes(v)?l.filter(x=>x!==v):l.concat(v);render();}break;}
+    case "idea-suggest-cat": {const s=recS();if(s?.kind==='idea-recommend'&&SUGGEST_CATS[el.dataset.k]){s.cat=el.dataset.k;s.err='';render();}break;}
+    case "ai-mode": { const g = el.closest(".ai-seg"); if(g){ g.style.setProperty("--i", el.dataset.k === "rec" ? 0 : 1); g.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b === el)); } S.aiMode = el.dataset.k; setTimeout(render, 300); break; }
+    case "ai-rec-run": { const s = recS(); if(s){ s.scope = el.dataset.d; await runIdeaRecommend(); } break; }
+    case "copy-share": {
+      const s = S.sheet = {kind:"copy-share", key:"", err:""}; render();
+      api("copyLink", {id:S.trip.id}).then(r => { if(S.sheet === s){ s.key = r.key; render(); } })
+        .catch(e => { if(S.sheet === s){ s.err = e && e.code === "offline" ? "ไม่มีอินเทอร์เน็ต ลองใหม่อีกครั้ง" : "สร้างรหัสไม่สำเร็จ ลองใหม่อีกครั้ง"; render(); } });
+      break; }
+    case "copy-share-send": { const s = S.sheet; if(!s?.key) break; try { await navigator.share({text:copyMsg(s.key)}); } catch(_){} break; }
+    case "exp-cancel": S.sheet = null; render(); break;
+    case "exp-add": S.swipeOpen = null; S.delAsk = null; S.sheet = {kind:"exp-add", id:el.dataset.id || ""}; render(); setTimeout(() => { const f = document.getElementById("exp-amt"); if(f && !el.dataset.id) f.focus(); }, 60); break;
+    case "exp-cur": { const f = el.closest("form"); segSlide(el); f.elements.cur.value = el.dataset.cur; f.elements.amount.focus(); break; }
+    case "exp-view": { if(S.segSwiped){ S.segSwiped = false; break; } let b = el; if(b.classList.contains("on")){ const o = [...b.parentNode.querySelectorAll("button")].find(x => x !== b); if(o) b = o; } try { localStorage.setItem("junbi-app-exp-view", b.dataset.cur); } catch(_){} segSlide(b); setTimeout(render, 280); break; }
+    case "exp-pick": { const o = (S.expUI ||= {pick:""}); o.pick = o.pick === el.dataset.id ? "" : el.dataset.id; render(); break; }
+    case "exp-who": { const o = (S.expUI || {}); const it = S.items.find(i => i.id === o.pick); if(!it) break; const all = expPeople(), cur = new Set(expSplitOf(it, all)), u = el.dataset.u;
+      if(cur.has(u)){ if(cur.size > 1) cur.delete(u); } else cur.add(u);
+      await store.updateItem(S.trip.id, it.id, {data:{split: cur.size === all.length ? null : [...cur]}}); render(); break; }
+    case "exp-line": { const txt = expPlanText(); try { await navigator.clipboard.writeText(txt); } catch(_){} location.href = "https://line.me/R/share?text=" + encodeURIComponent(txt); break; }
+    case "start-install": if(INSTALL.prompt){ INSTALL.prompt.prompt(); INSTALL.prompt.userChoice.then(c => { if(c && c.outcome === "accepted"){ INSTALL.prompt = null; INSTALL.done = true; render(); } }).catch(() => {}); } else { S.sheet = {kind:"install"}; render(); } break;
+    case "start-share": try { localStorage.setItem("junbi-app-share-on", "1"); } catch(_){} S.scOpen = true; S.sheet = {kind:"account"}; render(); aiStatusLoad(); break;
+    case "start-skip": try { localStorage.setItem("junbi-app-start-off", "1"); } catch(_){} render(); toast("ซ่อนแล้ว · เปิดอีกทีได้ที่รูปโปรไฟล์ มุมขวาบน"); break;
+    case "start-back": try { localStorage.removeItem("junbi-app-start-off"); } catch(_){} S.sheet = null; render(); break;
+    case "idea-suggest-like": {const s=recS();if(s?.kind==='idea-recommend'){const l=s.likes[s.cat]||(s.likes[s.cat]=[]),v=el.dataset.v;s.likes[s.cat]=l.includes(v)?l.filter(x=>x!==v):l.concat(v);render();}break;}
     case "idea-suggest-more": await runIdeaRecommend(true,true);break;
-    case "idea-suggest-toggle": {const s=S.sheet;if(s?.kind==='idea-recommend'&&s.step==='results'){const id=el.dataset.id;s.selected.has(id)?s.selected.delete(id):s.selected.add(id);keepScroll(".idea-suggest-results",render);}break;}
-    case "idea-suggest-edit": if(S.sheet?.kind==='idea-recommend'){S.sheet.step='form';render();}break;
-    case "idea-suggest-cancel": S.sheet?.ctl?.abort();if(S.sheet?.kind==='idea-recommend'){S.sheet.busy=false;S.sheet.step='form';}render();break;
+    case "idea-suggest-toggle": {const s=recS();if(s?.kind==='idea-recommend'&&s.step==='results'){const id=el.dataset.id;s.selected.has(id)?s.selected.delete(id):s.selected.add(id);keepScroll(".idea-suggest-results",render);}break;}
+    case "idea-suggest-edit": if(recS()){recS().step='form';render();}break;
+    case "idea-suggest-cancel": {const s=recS();s?.ctl?.abort();if(s){s.busy=false;s.step='form';}render();break;}
     case "idea-suggest-save": await saveIdeaRecommendations();break;
     case "planner-filter": S.planner.filter=el.dataset.k;render();break;
-    case "planner-search": {const s=S.planner;s.searchOpen=!s.searchOpen;if(!s.searchOpen)s.query='';render();if(s.searchOpen)document.getElementById('day-ideas-search')?.focus({preventScroll:true});break;}
     case "clear-open": S.sheet = {kind:"clear", scope:"day"}; render(); break;
     case "clear-scope": S.sheet.scope = el.dataset.k; render(); break;
     case "clear-run": clearPlan();break;
     case "export-open": S.sheet = {kind:"export", scope:"day", files:null, busy:""}; render(); break;
     case "export-run": exportRun(el.dataset.k); break;
     case "export-share": exportShare(); break;
-    case "plan-idea": planIdea(); break;
-    case "plan-day": if(S.sheet){ S.sheet.planDate = el.dataset.d; render(); } break;
-    case "plan-goto": {
-      const p = plannedFrom(S.sheet.id), i = p ? tripDates(t).indexOf(p.date) : -1;
-      S.sheet = null; if(i >= 0) S.day = i; render();
-      setTimeout(() => { const c = document.querySelector(".cal"); c && c.scrollIntoView({behavior:"smooth", block:"start"}); }, 30); break; }
     case "item": {const it=S.items.find(i=>i.id===el.dataset.id);if(editManualTravel(it))break;S.sheet={kind:"item",id:el.dataset.id,confirm:false};render();break;}
     case "close-sheet": if(S.sheet?.kind==="doc"&&S.sheet.back){S.sheet=S.sheet.back;render();break;} S.sheet?.lookupCtl?.abort();S.sheet?.ctl?.abort();S.sheet = null; render(); break;
     case "doc-open": docOpen(el.dataset.id, Number(el.dataset.n) || 0); break;
@@ -3956,6 +4290,7 @@ document.addEventListener("click", async e => {
       const it = S.items.find(i => i.id === el.dataset.id); S.swipeOpen = null; S.delAsk = null;
       if(it){if(editManualTravel(it))break;S.sheet = {kind:"item", id:it.id, edit:editFromItem(it), fromSwipe:true};render();}
       break; }
+    case "idea-del": { const s = S.sheet; if(!s.delAsk){ s.delAsk = true; render(); break; } const id = s.id; S.sheet = null; try { await store.deleteItem(t.id, id); toast("ลบแล้ว"); } catch(err){ fail(err); } render(); break; }
     case "entry-del": S.delAsk = el.dataset.key; S.swipeOpen = el.dataset.key; render(); break;
     case "entry-del-yes": {
       S.swipeOpen = null; S.delAsk = null;
@@ -3966,7 +4301,7 @@ document.addEventListener("click", async e => {
     case "sheet-confirm-no": S.sheet.confirm = false; render(); break;
     case "join-confirm": confirmJoin(); break;
     case "join-pick": { const pk = S.joinPick; if(!pk) break; if(!navigator.onLine){ toast("ต้องต่ออินเทอร์เน็ตก่อน"); break; } keepJoin(pk.code + "." + pk.spec); JunbiBackend.pickShared(pk.spec.split(".")); break; }
-    case "account": S.sheet = {kind:"account"}; render(); aiStatusLoad();
+    case "account": S.sheet = {kind:"account"}; render(); aiStatusLoad(); docKeys().then(k => { k.forEach(x => DOCS.have.add(x)); if(S.sheet && S.sheet.kind === "account") render(); });
       break;
     case "detach": {
       const it = S.sheet && S.items.find(i => i.id === S.sheet.id); if(!it) break;
@@ -4093,7 +4428,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-inbox-2";
+const BUILD = "junbi-mt1114-1";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
