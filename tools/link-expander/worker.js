@@ -8,7 +8,8 @@
    waits here until that person opens Junbi. Only the trip name, the two e-mails and the Drive file ids are kept,
    for 30 days or until they join. Whoever asks must show a Google sign-in made for Junbi; they only ever see
    notes addressed to their own e-mail. Needs a KV namespace bound as INVITES (free: 1,000 writes a day).
-   The same store keeps plans shared for friends to copy (/plans): places, ideas, travel and notes, no bookings. */
+   The same store keeps plans shared for friends to copy (/plans): places, ideas, travel and notes, no bookings,
+   and what the iPhone shortcut drops (/drop with a personal key; taken by the owner's Junbi with /drops/take, 14 days). */
 
 const ALLOWED_ORIGINS = ['https://attawit43559.github.io'];
 const SHORT = /^https:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps)\/[A-Za-z0-9_-]+/;
@@ -19,11 +20,13 @@ const BROWSER = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWeb
 export default {
   async fetch(request, env, ctx) {
     const origin = request.headers.get('Origin') || '';
+    // the iPhone shortcut (no web page, no Origin): drop a shared place or file for its owner's Junbi
+    if (request.method === 'POST' && new URL(request.url).pathname === '/drop' && !origin) return drop(request, env);
     const cors = ALLOWED_ORIGINS.includes(origin) ? { 'Access-Control-Allow-Origin': origin, 'Vary': 'Origin' } : null;
     if (!cors) return json({ error: 'not_allowed' }, 403, {});
     if (request.method === 'OPTIONS') return new Response(null, { headers: { ...cors, 'Access-Control-Allow-Methods': 'GET, POST', 'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Max-Age': '86400' } });
     const path = new URL(request.url).pathname;
-    if (path.startsWith('/invites') || path.startsWith('/plans')) return invites(request, env, cors, path);
+    if (path.startsWith('/invites') || path.startsWith('/plans') || path.startsWith('/drops')) return invites(request, env, cors, path);
     if (request.method !== 'GET') return json({ error: 'method' }, 405, cors);
 
     const link = (new URL(request.url).searchParams.get('u') || '').trim();
@@ -93,6 +96,32 @@ async function invites(request, env, cors, path) {
   let b = {};
   try { b = await request.json(); } catch (_) { return json({ error: 'bad_request' }, 400, cors); }
 
+  // the iPhone shortcut: this person's key, and what it dropped (taken once, then gone)
+  if (path === '/drops/key') {
+    const mine = await box(me), kk = 'dke:' + mine.slice(4);
+    let key = b.reset ? '' : await env.INVITES.get(kk);
+    if (!key) {
+      const oldKey = await env.INVITES.get(kk);
+      if (oldKey) await env.INVITES.delete('dk:' + oldKey);
+      key = 'jb' + [...crypto.getRandomValues(new Uint8Array(16))].map(x => x.toString(16).padStart(2, '0')).join('');
+      await env.INVITES.put('dk:' + key, mine.slice(4));
+      await env.INVITES.put(kk, key);
+    }
+    return json({ key }, 200, cors);
+  }
+  if (path === '/drops/take') {
+    const id = (await box(me)).slice(4), listKey = 'drops:' + id;
+    const list = JSON.parse(await env.INVITES.get(listKey) || '[]');
+    if (!list.length) return json({ drops: [] }, 200, cors);
+    const out = [];
+    for (const d of list) {
+      if (d.file) { const f = await env.INVITES.get('dropf:' + d.file); if (f) out.push({ text: d.text || '', at: d.at, file: JSON.parse(f) }); await env.INVITES.delete('dropf:' + d.file); }
+      else out.push({ text: d.text || '', at: d.at });
+    }
+    await env.INVITES.delete(listKey);
+    return json({ drops: out }, 200, cors);
+  }
+
   // a plan shared for friends to copy: a snapshot under a 24-character code, kept for a year after the last share
   if (path === '/plans' || path === '/plans/get') {
     const key = String(b.key || '');
@@ -130,6 +159,39 @@ async function invites(request, env, cors, path) {
     return json({ ok: true }, 200, cors);
   }
   return json({ error: 'not_found' }, 404, cors);
+}
+
+/* the shortcut posts { key, url: <what was shared>, data: <base64 of a picture / PDF, or the same text> }
+   (the same shape as My Trip's shortcut, with action "shareAny"); answers { ok, data: { message } } for its notification */
+async function drop(request, env) {
+  const say = (message, status = 200) => json({ ok: status === 200, message, data: { message } }, status, {});
+  if (!env.INVITES) return say('Junbi ยังไม่พร้อม ลองใหม่ภายหลัง', 503);
+  if (Number(request.headers.get('Content-Length') || 0) > 12000000) return say('ไฟล์ใหญ่เกินไป (ไม่เกิน 8 MB)', 413);
+  let b = {};
+  try { b = await request.json(); } catch (_) { return say('ส่งไม่สำเร็จ ลองใหม่อีกครั้ง', 400); }
+  const key = String(b.key || '').trim();
+  const id = /^jb[a-f0-9]{32}$/.test(key) ? await env.INVITES.get('dk:' + key) : null;
+  if (!id) return say('รหัสไม่ถูกต้อง เปิด Junbi → โปรไฟล์ → คัดลอกรหัสใหม่', 401);
+  const text = clean(b.url, 2000);
+  let data = String(b.data || '').replace(/\s/g, '');
+  const now = Math.floor(Date.now() / 1000), listKey = 'drops:' + id;
+  const list = JSON.parse(await env.INVITES.get(listKey) || '[]').filter(d => d.at > now - 14 * 86400).slice(-9);
+  const entry = { text, at: now };
+  // a picture or PDF comes as base64 that is not just the shared text again
+  let bytes = null;
+  try { if (data && data.length > 200) { const bin = atob(data.slice(0, 64)); if (bin.startsWith('%PDF') || bin.charCodeAt(0) === 0xFF || bin.startsWith('\x89PNG') || /ftyp(heic|heix|mif1)/.test(bin)) bytes = data; } } catch (_) {}
+  if (bytes) {
+    if (bytes.length > 11000000) return say('ไฟล์ใหญ่เกินไป (ไม่เกิน 8 MB)', 413);
+    const head = atob(bytes.slice(0, 64));
+    const mime = head.startsWith('%PDF') ? 'application/pdf' : head.charCodeAt(0) === 0xFF ? 'image/jpeg' : head.startsWith('\x89PNG') ? 'image/png' : 'image/heic';
+    entry.file = [...crypto.getRandomValues(new Uint8Array(8))].map(x => x.toString(16).padStart(2, '0')).join('');
+    await env.INVITES.put('dropf:' + entry.file, JSON.stringify({ mime, data: bytes }), { expirationTtl: 14 * 86400 });
+  } else if (!/https?:\/\//.test(text)) {
+    return say('ส่งได้เฉพาะลิงก์สถานที่ รูป หรือ PDF', 400);
+  }
+  list.push(entry);
+  await env.INVITES.put(listKey, JSON.stringify(list), { expirationTtl: 14 * 86400 });
+  return say(entry.file ? 'ส่งไฟล์เข้า Junbi แล้ว เปิดแอปเพื่อให้ AI แนบเข้าทริป' : 'ส่งเข้า Junbi แล้ว เปิดแอปครั้งหน้าจะเข้าทริปให้เอง');
 }
 
 function json(obj, status, headers) {

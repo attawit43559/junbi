@@ -2536,6 +2536,9 @@ window.JunbiBackend = {
   inboxSend: note => inbox_('/invites', note),
   inboxRemove: tripId => inbox_('/invites/remove', { tripId }),
   inboxCancel: (tripId, to) => inbox_('/invites/cancel', { tripId, to }),
+  /* the iPhone shortcut: this person's key (new one with reset), and what it dropped since last time */
+  dropKey: reset => inbox_('/drops/key', reset ? { reset: true } : {}).then(r => r && r.key),
+  dropsTake: () => inbox_('/drops/take', {}).then(r => (r && r.drops) || []),
   /* what came back from Google's file chooser: null (nothing pending), '' (nothing chosen), the ids, or 'error:…' */
   takePicked() { const v = LS.get('junbi-picked'); LS.set('junbi-picked', null); return v == null ? null : v === '-' ? '' : v; },
   finishSignIn,
