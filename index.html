@@ -3704,7 +3704,7 @@ function vStart(tripId){
   const files = tripId ? [...new Set(itemList(tripId).flatMap(itemFiles))] : [], got = files.filter(f => DOCS.have.has(f)).length;
   const steps = [
     {done: onHomeScreen(), title: "เพิ่ม Junbi ไว้หน้าจอ", sub: "เปิดเร็วเหมือนแอป ใช้ได้แม้ไม่มีเน็ต", act: "start-install", btn: INSTALL.prompt ? "ติดตั้ง" : "ดูวิธี"},
-    {done: shared, title: "เชื่อมปุ่มแชร์", sub: "แชร์สถานที่ / ตั๋วจากแอปอื่นเข้าทริป", act: "start-share", btn: "เชื่อมต่อ"},
+    {done: shared, title: "เก็บสถานที่จาก Google Maps", sub: "ดูวิธีส่งสถานที่เข้าทริป", act: "start-share", btn: "ดูวิธี"},
     {done: got >= files.length, title: "พร้อมใช้ตอนไม่มีเน็ต", sub: got >= files.length ? "แผนและใบจองอยู่ในเครื่องแล้ว" : `ใบจอง ${got}/${files.length} ไฟล์ · เปิดทริปตอนมีเน็ตสักครู่`, act: "", btn: ""}
   ];
   const n = steps.filter(x => x.done).length;
@@ -3834,17 +3834,22 @@ function iosSection(){
         "เพิ่ม <b>URL</b> → วางลิงก์ด้านล่าง แล้วต่อท้ายด้วย <b>ข้อความที่เข้ารหัสแล้ว</b> (URL Encoded Text)",
         "เพิ่ม <b>เปิด URL</b> (Open URLs) → กด <b>เสร็จสิ้น</b>"
       ]).map(x => `<li>${x}</li>`).join("")}</ol><div class="link-box sm"><input readonly value="${esc(ADD_BASE)}" aria-label="${EN ? "Link for the shortcut" : "ลิงก์สำหรับคำสั่งลัด"}"><button data-act="copy" data-text="${esc(ADD_BASE)}">${EN ? "Copy" : "คัดลอก"}</button></div>`);
-  return `<section class="share-box" data-os="ios">
-    <p class="small sc-intro">${EN ? "In Google Maps, share a place and pick Junbi: it goes straight into the trip's Saved list." : "ใน Google Maps กดแชร์สถานที่ แล้วเลือก Junbi สถานที่จะเข้าไปอยู่ใน \"สนใจ\" ของทริปเลย"}</p>
-    ${make}
-    ${scStep(2, EN ? "How to use it" : "วิธีใช้", `<small class="muted">${EN ? "Google Maps → open a place → <b>Share</b> → pick <b>Junbi</b> → tap <b>Save</b><br>· With several trips, it goes to the trip you opened last" : "Google Maps → เปิดสถานที่ → <b>แชร์</b> → เลือก <b>Junbi</b> → กด <b>บันทึก</b><br>· มีหลายทริป สถานที่จะเข้าทริปที่เปิดล่าสุด"}</small>`)}
-    <details class="share-how"><summary>${EN ? "Junbi not in the share menu?" : "ไม่เห็น Junbi ในเมนูแชร์?"}</summary><ol>${(EN ? [
-      "Scroll the row of apps in the share menu to the end → <b>Edit Actions</b> → turn on Junbi",
-      "The shortcut opens Junbi in Safari. The first time, sign in once in Safari: it is the same data as the home-screen app"
+  const easy = (EN ? [
+      "In <b>Google Maps</b> open the place → tap <b>Share</b> → <b>Copy link</b>",
+      "In <b>Junbi</b> open the trip → <b>Plan</b> tab → tap the green <b>+</b>",
+      "Tap <b>Paste Google Maps link</b> → <b>Save</b>. The name fills in by itself"
     ] : [
-      "เลื่อนแถวแอปในเมนูแชร์ไปขวาสุด → <b>แก้ไขการทำงาน</b> → เปิด Junbi",
-      "คำสั่งลัดจะเปิด Junbi ใน Safari ครั้งแรกต้องล็อกอินใน Safari 1 ครั้ง ข้อมูลจะตรงกับแอปบนหน้าจอโฮม"
-    ]).map(x => `<li>${x}</li>`).join("")}</ol></details>
+      "ใน <b>Google Maps</b> เปิดสถานที่ → กด <b>แชร์</b> → <b>คัดลอกลิงก์</b>",
+      "เปิด <b>Junbi</b> → เข้าทริป → แท็บ <b>วางแผน</b> → กด <b>+</b> สีเขียว",
+      "กด <b>วางลิงก์ Google Maps</b> → <b>บันทึก</b> ชื่อสถานที่ขึ้นเอง"
+    ]);
+  return `<section class="share-box" data-os="ios">
+    <p class="small sc-intro"><b>${EN ? "No setup needed: copy and paste" : "ไม่ต้องตั้งค่าอะไร ใช้คัดลอกแล้ววาง"}</b></p>
+    ${easy.map((x, n) => scStep(n + 1, "", `<span class="small">${x}</span>`)).join("")}
+    <details class="share-how"><summary>${IOS_SHORTCUT ? (EN ? "Want Junbi in the Share menu? (one tap)" : "อยากให้มี Junbi ในเมนูแชร์? (กดเพิ่มทีเดียว)") : (EN ? "For advanced users: Junbi in the Share menu" : "สำหรับคนที่คล่อง: ให้มี Junbi ในเมนูแชร์")}</summary>
+      ${make}
+      <p class="small muted">${EN ? "Then: Google Maps → <b>Share</b> → <b>Junbi</b> → <b>Save</b>. It opens Junbi in Safari; sign in there once." : "จากนั้น: Google Maps → <b>แชร์</b> → <b>Junbi</b> → <b>บันทึก</b> จะเปิด Junbi ใน Safari ครั้งแรกล็อกอินใน Safari 1 ครั้ง"}</p>
+    </details>
   </section>`;
 }
 function androidSection(){
@@ -4428,7 +4433,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-mt1114-1";
+const BUILD = "junbi-mt1114-2";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {

@@ -910,4 +910,9 @@ window.MYTRIP_EN = {
 "รหัสแผนจากเพื่อน": "Plan code from a friend",
 "รหัสแผนไม่ถูกต้อง ลองคัดลอกจากข้อความของเพื่อนอีกครั้ง": "That plan code isn't right. Copy it again from your friend's message.",
 "สร้างรหัสไม่สำเร็จ ลองใหม่อีกครั้ง": "Couldn't make the code. Try again.",
+"ไม่ต้องตั้งค่าอะไร ใช้คัดลอกแล้ววาง": "No setup needed: copy and paste",
+"อยากให้มี Junbi ในเมนูแชร์? (กดเพิ่มทีเดียว)": "Want Junbi in the Share menu? (one tap)",
+"สำหรับคนที่คล่อง: ให้มี Junbi ในเมนูแชร์": "For advanced users: Junbi in the Share menu",
+"เก็บสถานที่จาก Google Maps": "Save places from Google Maps",
+"ดูวิธีส่งสถานที่เข้าทริป": "See how to send places to a trip",
 };
