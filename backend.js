@@ -2278,6 +2278,37 @@ const saveTripOnce = ACTIONS.saveTrip;
 ACTIONS.saveTrip = req => { const old = find_(TRIPS, String(req.trip && req.trip.id)); if (req.create && old && isMember_(old.obj, req.me)) delete req.create; return saveTripOnce(req); };
 ACTIONS.geocode = async req => { const out = []; for (const x of (Array.isArray(req.q) ? req.q : []).slice(0, 60)) out.push(await geocode_(x).catch(() => null)); return out; };
 ACTIONS.resolveMapLink = req => resolveMapLink_(req);
+/* map pins: positions for places, stays and airports that have none (OpenStreetMap, free); the app saves them on the item */
+const AIRPORTS = { BKK:[13.690,100.750], DMK:[13.9126,100.6068], CNX:[18.7668,98.9626], HKT:[8.1132,98.3169], KBV:[8.0992,98.9862], USM:[9.5478,100.0623], HDY:[6.9332,100.3930], CEI:[19.9523,99.8829], UTH:[17.3864,102.7883], KKC:[16.4666,102.7837],
+  NRT:[35.7720,140.3929], HND:[35.5494,139.7798], KIX:[34.4320,135.2304], ITM:[34.7855,135.4382], UKB:[34.6328,135.2239], NGO:[34.8584,136.8054], CTS:[42.7752,141.6923], FUK:[33.5859,130.4507], OKA:[26.1958,127.6459], SDJ:[38.1397,140.9170], HIJ:[34.4361,132.9194], KOJ:[31.8034,130.7194],
+  ICN:[37.4602,126.4407], GMP:[37.5583,126.7906], PUS:[35.1795,128.9382], CJU:[33.5113,126.4930], TPE:[25.0797,121.2342], TSA:[25.0694,121.5525], KHH:[22.5771,120.3500], HKG:[22.3080,113.9185], MFM:[22.1496,113.5915],
+  SIN:[1.3644,103.9915], KUL:[2.7456,101.7099], CGK:[-6.1256,106.6559], DPS:[-8.7482,115.1670], MNL:[14.5086,121.0194], SGN:[10.8188,106.6520], HAN:[21.2212,105.8072], DAD:[16.0439,108.1992], PNH:[11.5466,104.8441], VTE:[17.9883,102.5633], RGN:[16.9073,96.1332],
+  PEK:[40.0799,116.6031], PKX:[39.5098,116.4105], PVG:[31.1443,121.8083], SHA:[31.1979,121.3363], CAN:[23.3924,113.2988], SZX:[22.6393,113.8107],
+  LHR:[51.4700,-0.4543], CDG:[49.0097,2.5479], FRA:[50.0379,8.5622], MUC:[48.3538,11.7861], ZRH:[47.4582,8.5555], AMS:[52.3105,4.7683], FCO:[41.8003,12.2389], HEL:[60.3172,24.9633], IST:[41.2753,28.7519],
+  DXB:[25.2532,55.3657], DOH:[25.2731,51.6081], DEL:[28.5562,77.1000], BOM:[19.0896,72.8656], SYD:[-33.9399,151.1753], MEL:[-37.6690,144.8410], LAX:[33.9416,-118.4085], SFO:[37.6213,-122.3790], JFK:[40.6413,-73.7781] };
+ACTIONS.placeCoords = async req => {
+  const tripId = String(req.tripId); mustBeMember_(tripId, req.me);
+  const trip = (find_(TRIPS, tripId) || {}).obj || {}, near = String(trip.destination || '').slice(0, 80), out = {};
+  for (const id of (Array.isArray(req.ids) ? req.ids : []).map(String).slice(0, 15)) {
+    const row = find_(ITEMS, id); if (!row || row.tripId !== tripId || ['place', 'stay', 'flight'].indexOf(row.obj.type) < 0) continue;
+    const it = row.obj, d = it.data || {};
+    if (it.type === 'flight') {   // both airports: a known code first, else a search by code and city
+      const ends = {};
+      for (const k of ['from', 'to']) {
+        const code = String(d[k] || '').trim().toUpperCase(); let ll = AIRPORTS[code] ? { lat: AIRPORTS[code][0], lon: AIRPORTS[code][1] } : null;
+        if (!ll && (d[k] || d[k + 'City'])) ll = await geocode_([/^[A-Z]{3}$/.test(code) ? code : d[k], 'airport', d[k + 'City']].filter(Boolean).join(' ')).catch(() => null);
+        if (ll) { ends[k + 'Lat'] = +Number(ll.lat).toFixed(6); ends[k + 'Lon'] = +Number(ll.lon).toFixed(6); }
+      }
+      if (Object.keys(ends).length) out[id] = Object.assign(ends, { airV: 2 });
+      continue;
+    }
+    if (d.lat != null && d.lat !== '' && isFinite(Number(d.lat))) { out[id] = { lat: Number(d.lat), lon: Number(d.lon) }; continue; }
+    const ll = await placeGeo_(String(it.title || ''), String(d.address || near)).catch(() => null)
+      || (it.title ? await geocode_([it.title, d.address || near].filter(Boolean).join(', ')).catch(() => null) : null);
+    if (ll) out[id] = { lat: +Number(ll.lat).toFixed(6), lon: +Number(ll.lon).toFixed(6) };
+  }
+  return { coords: out };
+};
 ACTIONS.travelOptions = req => travelCompare_(req, !!req.ai);
 ACTIONS.aiStatus = () => aiStatusLocal();
 ACTIONS.shareKey = () => ({ key: null });

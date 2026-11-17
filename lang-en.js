@@ -423,6 +423,7 @@ window.MYTRIP_EN = {
 "ไม่เห็น Junbi ในเมนูแชร์?": "Junbi not in the share menu?",
 "บัญชีและการตั้งค่า": "Account & settings",
 "ภาษา · Language": "Language",
+"ต้องใช้อินเทอร์เน็ตเพื่อโหลดแผนที่": "The map needs the internet",
 "ส่งออกแผนเที่ยว": "Export the plan",
 "ส่งออกแผนเที่ยว (PDF / รูป)": "Export the plan (PDF / pictures)",
 "กำลังหารูปสถานที่ และให้ AI เขียน Tips…": "Finding place photos and writing AI tips…",
