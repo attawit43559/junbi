@@ -1091,7 +1091,7 @@ async function refreshTrips(){
     list.forEach(t => { if(!waiting.has(t.id)) C.trips[t.id] = t; else if(C.trips[t.id]) Object.assign(C.trips[t.id], {memberIds:t.memberIds, members:t.members, ownerId:t.ownerId}); });
     const ids = list.map(t => t.id).filter(id => !gone.has(id));
     C.myTrips = [...C.myTrips.filter(id => waiting.has(id) && !ids.includes(id)), ...ids];
-    S.tripsReady = true; emit();
+    S.tripsReady = true; emit(); setTimeout(() => takeDrops(), 0);
   } catch(_) { S.tripsReady = true; emit(); }
 }
 async function refreshTrip(id){
@@ -1187,7 +1187,36 @@ const tripTickets = () => [...new Set(S.items.flatMap(itemFiles))].filter(x => /
 
 /* ---------- navigation ---------- */
 function go(view, extra={}){ Object.assign(S, extra); S.view = view; S.sheet = null; S.dockHidden = false; render(); window.scrollTo(0,0); if(view === "home") setTimeout(() => loadInvites(), 0); }
-document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible" && S.view === "home") loadInvites(); });
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible" && S.view === "home") loadInvites(); if(document.visibilityState === "visible") takeDrops(); });
+document.addEventListener("click", e => { const a = e.target.closest && e.target.closest("a.sc-get"); if(!a) return; try { localStorage.setItem("junbi-app-share-on", "1"); } catch(_){} const k = a.dataset.key || ""; if(k) try { navigator.clipboard.writeText(k).then(() => toast("คัดลอกรหัสแล้ว ถ้า iPhone ถามรหัสให้กดวาง")).catch(() => {}); } catch(_){} });
+/* what the iPhone shortcut dropped while Junbi was closed: places go into the trip opened last, pictures / PDFs to the AI */
+let dropsBusy = false;
+async function takeDrops(){
+  if(!IOS_SHORTCUT || dropsBusy || !S.token || !navigator.onLine || !S.tripsReady) return;
+  dropsBusy = true;
+  try {
+    const drops = await JunbiBackend.dropsTake();
+    if(!drops.length) return;
+    const list = S.trips || [];
+    if(!list.length){ toast("สร้างทริปก่อน แล้วค่อยแชร์สถานที่เข้ามานะ"); return; }
+    let last = ""; try { last = localStorage.getItem("junbi-app-last-trip") || ""; } catch(_){}
+    const t = list.find(x => x.id === last) || list[0];
+    let places = 0; const files = [];
+    for(const d of drops){
+      if(d.file && d.file.data){ try { const bin = atob(d.file.data), u = new Uint8Array(bin.length); for(let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+        files.push(new File([u], "shared-" + (files.length + 1) + (d.file.mime === "application/pdf" ? ".pdf" : ".jpg"), {type:d.file.mime})); } catch(_){} continue; }
+      const url = (String(d.text || "").match(MAPS_LINK) || [])[0]; if(!url) continue;
+      let r = {}; try { r = await api("resolveMapLink", {url}); } catch(_){}
+      const label = mapNameParts(r.name || "");
+      await store.addItem(t.id, {type:"idea", date:"", time:"", title:label.name || "สถานที่จาก Google Maps", sub:"",
+        data:{kind:r.kind || "ที่เที่ยว", address:r.address || label.address || "", originalMapsName:r.originalName || r.name || "", ...(r.geoFrom === "google" ? {lat:r.lat, lon:r.lon, geoFrom:"google"} : {}), mapsUrl:url},
+        createdBy:S.me, createdAt:Date.now(), source:"share"});
+      places++;
+    }
+    if(places) toast(`เพิ่ม ${places} สถานที่จากเมนูแชร์ไว้ใน "${t.name || "ทริป"}" แล้ว`);
+    if(files.length){ S.shareIn = {ids:[t.id], text:"", files}; shareInSend(t.id); }
+  } catch(_){} finally { dropsBusy = false; }
+}
 function cleanupAccess(){}   // flag holder: the owner is removing Drive access of people who left
 function openTrip(id, view="trip"){
   if(S.tripId !== id){
@@ -3819,21 +3848,6 @@ const ADD_BASE = location.origin + location.pathname + "?add=";
 const EN = LANG === "en";
 const scStep = (n, title, body) => `<div class="sc-step"><span class="sc-n">${n}</span><div class="sc-body"><b>${title}</b>${body}</div></div>`;
 function iosSection(){
-  const make = IOS_SHORTCUT
-    ? scStep(1, EN ? "Add the Junbi shortcut" : "เพิ่มคำสั่งลัด Junbi", `<a class="pill-btn" href="${esc(IOS_SHORTCUT)}" target="_blank" rel="noopener">${ic("plus",18)}${EN ? "Add shortcut" : "เพิ่มคำสั่งลัด"}</a><small class="muted">${EN ? "It opens in the Shortcuts app: tap <b>Add Shortcut</b>" : "เปิดในแอปคำสั่งลัด (Shortcuts) แล้วกด <b>เพิ่มคำสั่งลัด</b>"}</small>`)
-    : scStep(1, EN ? "Make a shortcut once (about 2 minutes)" : "สร้างคำสั่งลัดครั้งเดียว (ประมาณ 2 นาที)", `<ol class="sc-list">${(EN ? [
-        "Open the <b>Shortcuts</b> app → tap <b>+</b> and name it <b>Junbi</b>",
-        "Tap <b>ⓘ</b> at the bottom → turn on <b>Show in Share Sheet</b>",
-        "Add the action <b>URL Encode</b> on <b>Shortcut Input</b>",
-        "Add <b>URL</b> → paste the link below, then add <b>URL Encoded Text</b> after it",
-        "Add <b>Open URLs</b> → tap <b>Done</b>"
-      ] : [
-        "เปิดแอป <b>คำสั่งลัด</b> (Shortcuts) → กด <b>+</b> ตั้งชื่อว่า <b>Junbi</b>",
-        "กด <b>ⓘ</b> ด้านล่าง → เปิด <b>แสดงในแผ่นแชร์</b> (Show in Share Sheet)",
-        "เพิ่มการทำงาน <b>เข้ารหัส URL</b> (URL Encode) ให้ใช้ <b>อินพุตคำสั่งลัด</b>",
-        "เพิ่ม <b>URL</b> → วางลิงก์ด้านล่าง แล้วต่อท้ายด้วย <b>ข้อความที่เข้ารหัสแล้ว</b> (URL Encoded Text)",
-        "เพิ่ม <b>เปิด URL</b> (Open URLs) → กด <b>เสร็จสิ้น</b>"
-      ]).map(x => `<li>${x}</li>`).join("")}</ol><div class="link-box sm"><input readonly value="${esc(ADD_BASE)}" aria-label="${EN ? "Link for the shortcut" : "ลิงก์สำหรับคำสั่งลัด"}"><button data-act="copy" data-text="${esc(ADD_BASE)}">${EN ? "Copy" : "คัดลอก"}</button></div>`);
   const easy = (EN ? [
       "In <b>Google Maps</b> open the place → tap <b>Share</b> → <b>Copy link</b>",
       "In <b>Junbi</b> open the trip → <b>Plan</b> tab → tap the green <b>+</b>",
@@ -3843,13 +3857,21 @@ function iosSection(){
       "เปิด <b>Junbi</b> → เข้าทริป → แท็บ <b>วางแผน</b> → กด <b>+</b> สีเขียว",
       "กด <b>วางลิงก์ Google Maps</b> → <b>บันทึก</b> ชื่อสถานที่ขึ้นเอง"
     ]);
+  const paste = easy.map((x, n) => scStep(n + 1, "", `<span class="small">${x}</span>`)).join("");
+  if(!IOS_SHORTCUT) return `<section class="share-box" data-os="ios">
+    <p class="small sc-intro"><b>${EN ? "No setup needed: copy and paste" : "ไม่ต้องตั้งค่าอะไร ใช้คัดลอกแล้ววาง"}</b></p>${paste}</section>`;
+  const k = S.dropKey;
+  const keyBox = k ? `<div class="link-box sm"><input readonly value="${esc(k)}" aria-label="${EN ? "Your code" : "รหัสของคุณ"}"><button data-act="copy" data-text="${esc(k)}">${EN ? "Copy" : "คัดลอก"}</button></div>`
+    : `<button class="pill-btn" data-act="drop-key" ${S.dropKeyBusy ? "disabled" : ""}>${S.dropKeyBusy ? (EN ? "Making…" : "กำลังสร้าง…") : (EN ? "Get my code" : "สร้างรหัสของฉัน")}</button>`;
   return `<section class="share-box" data-os="ios">
-    <p class="small sc-intro"><b>${EN ? "No setup needed: copy and paste" : "ไม่ต้องตั้งค่าอะไร ใช้คัดลอกแล้ววาง"}</b></p>
-    ${easy.map((x, n) => scStep(n + 1, "", `<span class="small">${x}</span>`)).join("")}
-    <details class="share-how"><summary>${IOS_SHORTCUT ? (EN ? "Want Junbi in the Share menu? (one tap)" : "อยากให้มี Junbi ในเมนูแชร์? (กดเพิ่มทีเดียว)") : (EN ? "For advanced users: Junbi in the Share menu" : "สำหรับคนที่คล่อง: ให้มี Junbi ในเมนูแชร์")}</summary>
-      ${make}
-      <p class="small muted">${EN ? "Then: Google Maps → <b>Share</b> → <b>Junbi</b> → <b>Save</b>. It opens Junbi in Safari; sign in there once." : "จากนั้น: Google Maps → <b>แชร์</b> → <b>Junbi</b> → <b>บันทึก</b> จะเปิด Junbi ใน Safari ครั้งแรกล็อกอินใน Safari 1 ครั้ง"}</p>
-    </details>
+    <p class="small sc-intro">${EN ? "Share a place from Google Maps, or a picture / PDF, into your trip without opening Junbi." : "แชร์สถานที่จาก Google Maps หรือรูป / PDF เข้าทริปได้เลย ไม่ต้องเปิด Junbi"}</p>
+    ${scStep(1, EN ? "Your code" : "รหัสของคุณ", `<small class="muted">${EN ? "For your phones only. Don't send it to anyone." : "ใช้กับเครื่องของคุณเท่านั้น อย่าส่งให้คนอื่น"}</small>${keyBox}`)}
+    ${k ? scStep(2, EN ? "Add the shortcut" : "เพิ่มคำสั่งลัด", `<small class="muted">${EN ? "Tap below → <b>Add Shortcut</b> → when it asks for the code, tap <b>Paste</b> → <b>Done</b>" : "กดด้านล่าง → <b>เพิ่มคำสั่งลัด</b> → ถ้าถามรหัส ให้กด <b>วาง</b> → <b>เสร็จสิ้น</b>"}</small>
+      <a class="sc-get" href="${esc(IOS_SHORTCUT)}" target="_blank" rel="noopener" data-key="${esc(k)}"><span class="sc-ic">${ic("upload",18)}</span><span><b>${EN ? "Junbi shortcut" : "คำสั่งลัด Junbi"}</b><small>${EN ? "places · pictures · PDFs" : "สถานที่ · รูป · PDF"}</small></span><span class="sc-go">${EN ? "Add" : "เพิ่ม"}</span></a>`) : ""}
+    ${k ? scStep(3, EN ? "How to use it" : "วิธีใช้", `<small class="muted">${EN ? "Google Maps → <b>Share</b> → <b>Junbi</b>. Next time you open Junbi, the place is in the trip you opened last.<br>· Pictures / PDFs: the AI attaches them to the matching place" : "Google Maps → <b>แชร์</b> → <b>Junbi</b> เปิด Junbi ครั้งถัดไป สถานที่จะเข้าทริปที่เปิดล่าสุดให้เอง<br>· รูป / PDF: AI แนบให้สถานที่ที่ตรงกัน"}</small>`) : ""}
+    ${k ? `<details class="share-how"><summary>${EN ? "Junbi not in the share menu?" : "ไม่เห็น Junbi ในเมนูแชร์?"}</summary><ol>${(EN ? ["Scroll the row of apps in the share menu to the end → <b>Edit Actions</b> → turn on Junbi", "It says the code is wrong: copy the code above, open <b>Shortcuts</b> → <b>⋯</b> on Junbi → paste it in the first <b>Text</b> box"] : ["เลื่อนแถวแอปในเมนูแชร์ไปขวาสุด → <b>แก้ไขการทำงาน</b> → เปิด Junbi", "ขึ้นว่ารหัสไม่ถูกต้อง: คัดลอกรหัสด้านบน → แอป <b>คำสั่งลัด</b> → กด <b>⋯</b> ที่ Junbi → วางรหัสในกล่อง <b>ข้อความ</b> แรก"]).map(x => `<li>${x}</li>`).join("")}</ol></details>
+    <div class="share-act"><button class="link-btn" data-act="drop-key-reset">${EN ? "Make a new code" : "สร้างรหัสใหม่"}</button></div>` : ""}
+    <details class="share-how"><summary>${EN ? "Or without the shortcut: copy and paste" : "หรือไม่ใช้คำสั่งลัด: คัดลอกแล้ววาง"}</summary>${paste}</details>
   </section>`;
 }
 function androidSection(){
@@ -4306,13 +4328,19 @@ document.addEventListener("click", async e => {
     case "sheet-confirm-no": S.sheet.confirm = false; render(); break;
     case "join-confirm": confirmJoin(); break;
     case "join-pick": { const pk = S.joinPick; if(!pk) break; if(!navigator.onLine){ toast("ต้องต่ออินเทอร์เน็ตก่อน"); break; } keepJoin(pk.code + "." + pk.spec); JunbiBackend.pickShared(pk.spec.split(".")); break; }
-    case "account": S.sheet = {kind:"account"}; render(); aiStatusLoad(); docKeys().then(k => { k.forEach(x => DOCS.have.add(x)); if(S.sheet && S.sheet.kind === "account") render(); });
+    case "account": S.sheet = {kind:"account"}; render(); aiStatusLoad(); if(IOS_SHORTCUT && !S.dropKey && navigator.onLine) JunbiBackend.dropKey().then(k => { S.dropKey = k; if(S.sheet && S.sheet.kind === "account") render(); }).catch(() => {}); docKeys().then(k => { k.forEach(x => DOCS.have.add(x)); if(S.sheet && S.sheet.kind === "account") render(); });
       break;
     case "detach": {
       const it = S.sheet && S.items.find(i => i.id === S.sheet.id); if(!it) break;
       const keep = [...new Set([...(it.fileIds||[]), ...(it.fileId ? [it.fileId] : [])])].filter(x => x !== el.dataset.file);
       store.updateItem(S.trip.id, it.id, {fileIds:keep, fileId:""}); toast("เอาใบจองออกแล้ว"); break;
     }
+    case "drop-key": case "drop-key-reset": { if(S.dropKeyBusy) break; if(!navigator.onLine){ toast("ต้องต่ออินเทอร์เน็ตก่อน"); break; }
+      S.dropKeyBusy = true; render();
+      try { S.dropKey = await JunbiBackend.dropKey(a === "drop-key-reset"); if(a === "drop-key-reset") toast("สร้างรหัสใหม่แล้ว ใส่รหัสใหม่ในคำสั่งลัดด้วยนะ"); }
+      catch(e){ toast("สร้างรหัสไม่สำเร็จ ลองใหม่อีกครั้ง"); }
+      finally { S.dropKeyBusy = false; render(); }
+      break; }
     case "share-other": { const box = el.closest("details"); const sec = box && box.querySelector(".share-box"); if(sec){ const ios = sec.dataset.os === "ios"; sec.outerHTML = ios ? androidSection() : iosSection(); el.textContent = ios ? (EN ? "On iPhone? See the iPhone steps" : "ใช้ iPhone? ดูวิธีของ iPhone") : (EN ? "On Android? See the Android steps" : "ใช้ Android? ดูวิธีของ Android"); } break; }
     case "logout": logout(); break;
     case "google-login": S.loggingIn = true; S.loginErr = ""; render(); JunbiBackend.signIn(); break;
@@ -4433,7 +4461,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-mt1114-2";
+const BUILD = "junbi-mt1114-3";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
