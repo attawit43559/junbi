@@ -227,6 +227,46 @@ html.kb .dock{bottom:calc(6px + var(--kb,0px))}
 .sheet.float input[type=date]{width:100%;min-width:0;box-sizing:border-box;-webkit-appearance:none;appearance:none}
 .plan-code{font-family:ui-monospace,Menlo,monospace;font-size:15px;letter-spacing:.04em;text-align:center;background:var(--tile);border-radius:16px;padding:14px 10px;word-break:break-all;user-select:all;-webkit-user-select:all}
 .row-btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:10px}
+.dial-scrim{background:rgba(43,33,28,.28);display:block;animation:dialFade .16s ease-out}.dial-scrim.closing{animation:dialFadeOut .2s ease-in forwards}
+@keyframes dialFade{from{background:rgba(43,33,28,0)}}@keyframes dialFadeOut{to{background:rgba(43,33,28,0)}}
+.dial{position:fixed;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+/* each button starts tucked behind ⋯ and slides down to its place; closing folds them back up, last one first */
+.dial-item{--dy:calc(-1 * (var(--i) * 56px + 34px));display:flex;align-items:center;gap:10px;border:0;background:none;padding:0;font:inherit;color:var(--ink);
+  opacity:0;transform:translateY(var(--dy)) scale(.35);transform-origin:right center;animation:dialIn .26s cubic-bezier(.2,.9,.25,1.12) forwards;animation-delay:calc(var(--i) * 16ms)}
+.dial-item .dial-label{opacity:0;transform:translateX(10px);animation:dialLabel .16s ease-out forwards;animation-delay:calc(var(--i) * 16ms + 80ms)}
+@keyframes dialIn{60%{opacity:1}to{opacity:1;transform:none}}
+@keyframes dialLabel{to{opacity:1;transform:none}}
+.closing .dial-item{opacity:1;transform:none;animation:dialOut .18s cubic-bezier(.5,0,.75,.2) forwards;animation-delay:calc((6 - var(--i)) * 10ms)}
+.closing .dial-item .dial-label{animation:dialLabelOut .12s ease-in forwards}
+@keyframes dialOut{to{opacity:0;transform:translateY(var(--dy)) scale(.35)}}
+@keyframes dialLabelOut{from{opacity:1;transform:none}to{opacity:0;transform:translateX(10px)}}
+@media (prefers-reduced-motion:reduce){.dial-item,.dial-item .dial-label,.closing .dial-item{animation-duration:.01s;animation-delay:0s}}
+.dial-label{background:rgba(255,255,255,.96);border-radius:999px;padding:5px 12px;font-size:14px;font-weight:500;box-shadow:0 2px 8px rgba(43,33,28,.12);white-space:nowrap}
+.dial-btn{width:48px;height:48px;flex:none;border-radius:999px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(43,33,28,.16)}
+.dial-danger .dial-btn{background:#FDECEC;color:#C0392B}
+.dm-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;margin:0;text-align:center;padding:20px}
+.dm-pin{flex:none;width:24px;height:24px;border-radius:999px;background:var(--deep);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;line-height:1}
+.dm-drop{width:30px;height:40px;position:relative;cursor:pointer}.dm-drop>svg{position:absolute;inset:0;width:30px;height:40px;fill:var(--soft);stroke:#FFFFFF;stroke-width:1.6;overflow:visible;filter:drop-shadow(0 1px 2px rgba(43,33,28,.22))}
+.dm-name{position:absolute;left:29px;top:7px;max-width:118px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;font-weight:500;color:rgba(43,33,28,.62);text-shadow:0 0 2px #fff,0 0 3px #fff,0 0 4px #fff;pointer-events:none}.dm-name.off{visibility:hidden}
+.dm-drop span{position:absolute;left:0;right:0;top:6px;height:18px;display:flex;align-items:center;justify-content:center;color:var(--deep);font-size:13px;font-weight:600;line-height:1}.dm-drop span svg{position:static;width:14px;height:14px;fill:none}
+.trip-map{--hmh:min(46svh,420px);position:relative;flex:none;height:var(--hmh);border-radius:28px;overflow:hidden;background:var(--soft,var(--tile))}
+.hm-slot{position:absolute;top:0;left:0;right:0;height:var(--hmh);contain:strict}.hm-slot .dm-map{transition:opacity .3s ease-out}.hm-slot .dm-map.wait{opacity:0}.hm-slot .dm-map{position:absolute;inset:0;height:auto}.hm-slot .dm-msg{font-size:13px;color:var(--muted)}
+.trip-bar,.trip-map{touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.trip-map .hm-cover{position:absolute;top:0;left:0;right:0;height:var(--hmfrom);z-index:3;pointer-events:none;margin:0}
+.trip-map.grow{animation:hmGrow .48s cubic-bezier(.32,.72,0,1) var(--ad,0s) both}
+.trip-map.grow .hm-cover{animation:hmOut .3s ease-out var(--ad,0s) both}.trip-map.grow .hm-ov{animation:hmIn .3s ease-out calc(var(--ad,0s) + .16s) both}
+.trip-map.shrink{animation:hmShrink .4s cubic-bezier(.32,.72,0,1) var(--ad,0s) both}
+.trip-map.shrink .hm-cover{animation:hmIn .24s ease-in-out calc(var(--ad,0s) + .08s) both}.trip-map.shrink .hm-ov{animation:hmOut .14s ease-out var(--ad,0s) both}
+@keyframes hmGrow{from{height:var(--hmfrom)}to{height:var(--hmh)}}@keyframes hmShrink{from{height:var(--hmh)}to{height:var(--hmfrom)}}@keyframes hmIn{from{opacity:0}}@keyframes hmOut{to{opacity:0}}
+@media (prefers-reduced-motion:reduce){.trip-map.grow,.trip-map.shrink,.trip-map .hm-cover,.trip-map .hm-ov{animation-duration:.01s;animation-delay:0s}}
+.hm-ov{position:absolute;z-index:2;display:flex;align-items:center;gap:8px;min-width:0}
+.trip-map .round{background:rgba(255,255,255,.94);color:#2B211C;box-shadow:0 2px 8px rgba(43,33,28,.16)}
+.hm-title{min-width:0;background:rgba(255,255,255,.72);color:#5A4E46;border-radius:999px;padding:3px 10px;font-size:12px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.hm-slot .maplibregl-ctrl-attrib{font-size:10px;line-height:1.3;max-width:calc(100% - 20px)}
+.maplibregl-ctrl-attrib.maplibregl-compact{min-height:20px;opacity:.75}.maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-button{width:20px;height:20px;background-size:16px}
+.entry.entry-move.map-on{background:#FFF1DC;border-radius:14px}.entry-move.map-on .ttl,.entry-move.map-on .move-ic{color:#A85A00}
+.dm-pin.big{width:30px;height:30px;font-size:13.5px;border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.28);cursor:pointer;box-sizing:border-box}
+.dm-pin svg{width:14px;height:14px}
 .guide-scrim{align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 20px) 18px calc(env(safe-area-inset-bottom,0px) + 20px);box-sizing:border-box}
 .guide-card{width:100%;max-width:380px;max-height:calc(100% - 24px);background:var(--surface);border-radius:28px;box-shadow:0 18px 50px rgba(20,19,26,.28);display:flex;flex-direction:column;gap:12px;padding:14px 0 18px;overflow:hidden;animation:guideIn .22s ease-out}
 @keyframes guideIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
@@ -255,7 +295,7 @@ html.kb .dock{bottom:calc(6px + var(--kb,0px))}
 .cat-list li+li{border-top:1px solid var(--line)}
 .cat-row{width:100%;display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 0;border:0;background:none;text-align:left;color:var(--muted)}
 .cat-row .grow{color:var(--ink)}
-.cat-row .ttl{font-weight:500;font-size:14px}
+.cat-row .ttl{font-weight:500;font-size:14px}.cat-row-ic{gap:12px;min-height:60px}.cat-row-ic .thumb{flex:none}
 .cat-add{align-self:flex-start;min-height:40px;padding:0 12px;border-radius:999px;border:0;background:var(--accent-soft);display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .drop.compact{flex-direction:row;justify-content:center;gap:10px;padding:16px;border-radius:20px}
@@ -338,8 +378,8 @@ html.kb .dock{bottom:calc(6px + var(--kb,0px))}
 .exp-seg button.on{color:var(--ink)}
 .exp-list{list-style:none;margin:0;padding:0}.exp-list>li{border-bottom:1px solid var(--line)}
 .exp-list .trow-slide{background:var(--bg)}
-.exp-row{width:100%;display:flex;align-items:center;gap:10px;border:0;background:none;font:inherit;font-size:14px;color:inherit;text-align:left;padding:8px 2px;min-height:48px}
-.exp-row .grow{display:block;min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.exp-row b{font-weight:400;font-size:14px}.exp-row small{font-size:11.5px;color:var(--muted);opacity:.7}.exp-amt{font-weight:600;font-size:14px;white-space:nowrap;flex:none}
+.exp-row{width:100%;display:flex;align-items:center;gap:10px;border:0;background:none;font:inherit;font-size:14px;color:inherit;text-align:left;padding:8px 2px;min-height:56px}/* every row has room for the paid amount underneath, so all rows are one size */
+.exp-row .grow{display:block;min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.exp-row b{font-weight:400;font-size:14px}.exp-row small{font-size:11.5px;color:var(--muted);opacity:.7}.exp-amt{font-weight:600;font-size:14px;white-space:nowrap;flex:none}.exp-amt small{display:block;font-size:11px;font-weight:400;color:var(--muted);opacity:.8;text-align:right;line-height:1.2}
 .exp-list li.open .exp-row .grow{white-space:normal}
 .exp-who{display:flex;flex-wrap:wrap;gap:10px;padding:0 2px 10px}
 .exp-who button{display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;padding:0;font:inherit;color:var(--muted);min-width:40px}.exp-who button.on{color:var(--ink)}
@@ -348,9 +388,14 @@ html.kb .dock{bottom:calc(6px + var(--kb,0px))}
 .exp-actions{display:flex;gap:10px;margin-top:14px}
 .exp-btn{flex:1;min-height:48px;border:0;border-radius:999px;font:inherit;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px}.exp-btn:disabled{opacity:.5}
 .exp-btn-line{background:#DDF5E3;color:#06833A}.exp-btn-back{background:var(--tile);color:var(--ink)}
-.exp-btn-add{background:#FFE7A8;color:#7A4A00}
+.exp-btn-add{background:var(--accent);color:var(--on-accent)}
+.exp-sheet.steady{animation:none}
+/* the expense sheet follows the visible area like the other sheets; moving between its fields is done without iPhone's page slide (see touchend below) */
+/* the number pad is shorter than the letter keyboard: the sheet's white carries on down behind it, so the page never shows in the gap */
+@media (max-width:560px){.sheet.exp-sheet{box-shadow:0 540px 0 500px var(--surface)}}
 .exp-form{gap:16px}.exp-amt-box{display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 0 6px}
-.exp-big{width:100%;border:0!important;background:none!important;box-shadow:none!important;font-family:var(--display);font-size:46px!important;font-weight:500;text-align:center;color:var(--ink);padding:0!important;min-height:64px;outline:none}
+.exp-big{width:100%;border:0!important;background:none!important;box-shadow:none!important;font-family:var(--display);font-size:46px!important;font-weight:500;text-align:center;color:var(--ink);padding:0!important;min-height:64px;outline:none;caret-color:transparent}
+.exp-big::placeholder{color:var(--muted);opacity:.45;transition:color .15s,opacity .15s}.exp-big:focus::placeholder{color:var(--ink);opacity:1}
 .exp-amt-box .exp-seg button{font-size:14.5px;padding:6px 22px;min-height:40px}
 .exp-what{display:flex;flex-direction:column;gap:4px}.exp-what input:focus,.exp-big:focus{outline:none!important}.exp-what input:focus{border-bottom-color:var(--accent-line)!important}.exp-what input{border:0!important;border-bottom:1.5px solid var(--line)!important;border-radius:0!important;background:none!important;font-size:17px;padding:10px 0!important}
 .pick-day{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
@@ -850,6 +895,7 @@ const itemIcon = it => {
 /* the day a memo was put into the plan, from the place made from it */
 const plannedFrom = id => S.items.find(i => i.type === "place" && (i.data||{}).fromIdea === id);
 const IC = {
+  map:'<path d="M9 4 3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5L9 4zM9 4v13.5M15 6.5V20"/>',
   refresh:'<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>',
   globe:'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 12h18M12 3c2.6 2.5 4 5.6 4 9s-1.4 6.5-4 9c-2.6-2.5-4-5.6-4-9s1.4-6.5 4-9z" fill="none" stroke="currentColor" stroke-width="1.8"/>',
   history:'<path d="M3 11a9 9 0 1 1 2.4 7M3 4v7h7M12 7v5l3 2"/>',
@@ -947,6 +993,7 @@ function spanOf(items){
 const S = {
   view:"loading", me:null, myName:"", trips:[], tripsReady:false,
   tripId:null, trip:null, items:[], day:0,
+  mapMode:(() => { try { return localStorage.getItem("junbi-app-mapmode") === "1"; } catch(_){ return false; } })(), hm:null,
   newTrip:{ name:"", destination:"", start:"", end:"" },
   upload:null, review:null, sheet:null, toast:"", joinCode:"", joinTrip:null, joinMissing:false
 };
@@ -1119,7 +1166,7 @@ async function refreshTrip(id){
     s.style.transition=anim?'opacity .2s,transform .25s ease':'none';s.style.opacity=d>14?Math.min(1,(d-14)/30):0;s.style.transform=`translateY(${Math.max(0,d/2-11)}px)`;
     s.classList.toggle('spin',loading);c.setAttribute('stroke-dasharray',loading?'70 100':`${Math.min(80,d/GO*80)} 100`);s.classList.toggle('ready',d>=GO&&!loading);};
   document.addEventListener('touchstart',e=>{y0=null;dy=0;if(busy||e.touches.length!==1||window.scrollY>2||!page())return;
-    if(document.querySelector('.scrim')||e.target.closest?.('.dock-body,.sheet,.dock.open,input,textarea,select,.exp-seg,[data-swipe],[data-guide-view]'))return;
+    if(document.querySelector('.scrim')||e.target.closest?.('.dock-body,.sheet,.dock.open,input,textarea,select,.exp-seg,[data-swipe],[data-guide-view],.hm-slot'))return;
     y0=e.touches[0].clientY;t0=Date.now();},{passive:true});
   document.addEventListener('touchmove',e=>{if(y0==null)return;const d=e.touches[0].clientY-y0;
     if(d<=0||window.scrollY>2||(dy===0&&Date.now()-t0>350)){y0=null;if(dy)show(0,{anim:true});dy=0;return;}   // a long press is a drag, not a pull
@@ -1161,7 +1208,7 @@ async function prepFile(f){
 
 /* ---------- helpers ---------- */
 function toast(msg){ S.toast = msg; render(); clearTimeout(toast.t); toast.t = setTimeout(() => { S.toast=""; render(); }, 2600); }
-const busyForm = () => ["new","review","upload"].includes(S.view) || S.catTab === "help" || (S.sheet && (["place","move","idea","trip-edit","doc","taxi","sos","sos-doctor","guide"].includes(S.sheet.kind) || !!S.sheet.edit));
+const busyForm = () => ["new","review","upload"].includes(S.view) || S.catTab === "help" || (S.sheet && (["place","move","idea","trip-edit","doc","taxi","sos","sos-doctor","guide","trip-more","exp-add"].includes(S.sheet.kind) || !!S.sheet.edit));
 /* background refreshes wait while someone is scrolling the bottom panel, so the list doesn't jump under their finger */
 let panelScrollAt = 0;
 document.addEventListener("scroll", e => { if(e.target && e.target.classList && e.target.classList.contains("dock-body")) panelScrollAt = Date.now(); }, true);
@@ -1356,16 +1403,14 @@ async function confirmCopy(){
     S.sheet = null; toast("คัดลอกแผนแล้ว"); openTrip(r.trip.id); refreshTrip(r.trip.id);
   } catch(e){ s.busy = false; if(S.sheet === s){ s.err = e && e.code === "offline" ? "ไม่มีอินเทอร์เน็ต ลองใหม่อีกครั้ง" : "คัดลอกไม่สำเร็จ ลองใหม่อีกครั้ง"; render(); } }
 }
-function vTripMore(){
-  return `<div class="scrim" data-act="close-sheet"><div class="sheet" role="dialog" aria-modal="true" aria-label="เพิ่มเติม" data-stop="1"><div class="hd"><h2>เพิ่มเติม</h2><button class="round" data-act="close-sheet" aria-label="ปิด">${ic('close')}</button></div><div class="menu">
-    <button data-act="trip-edit">${ic("edit",20)}แก้ไขชื่อ / วันเที่ยว</button>
-    <button data-act="export-open">${ic("image",20)}ส่งออกแผนเที่ยว (PDF / รูป)</button>
-    <button data-act="sos-open">${ic("sos",20)}ข้อมูลฉุกเฉิน</button>
-    <button data-act="invite">${ic("users",20)}ผู้ร่วมทริป / ชวนเพื่อน</button>
-    <button data-act="copy-share">${ic("share",20)}แชร์แผนให้เพื่อนคัดลอก</button>
-    <button data-act="account">${ic("info",20)}บัญชีและการตั้งค่า</button>
-    ${ownOn(tripDates(S.trip)).length||planNotes(tripDates(S.trip)).length?`<button class="danger" data-act="clear-open">${ic('trash',20)}ล้างแผน…</button>`:''}
-  </div></div></div>`;
+/* ⋯ opens a column of round buttons hanging from it, each with its name beside it */
+function vTripMore(s){
+  const items = [["trip-edit", "edit", "แก้ไขชื่อ / วันเที่ยว"], ["export-open", "image", "ส่งออกแผนเที่ยว"],
+    ["invite", "users", "ผู้ร่วมทริป / ชวนเพื่อน"], ["copy-share", "share", "แชร์แผนให้เพื่อนคัดลอก"], ["account", "info", "บัญชีและการตั้งค่า"]];
+  if(ownOn(tripDates(S.trip)).length || planNotes(tripDates(S.trip)).length) items.push(["clear-open", "trash", "ล้างแผน…", "dial-danger"]);
+  return `<div class="scrim dial-scrim" data-act="close-sheet"><div class="dial" role="menu" aria-label="เพิ่มเติม" style="top:${s.top || 90}px;right:${s.right || 16}px">
+    ${items.map(([act, icon, label, cls], i) => `<button type="button" role="menuitem" class="dial-item ${cls || ""}" data-act="${act}" style="--i:${i}"><span class="dial-label">${label}</span><span class="dial-btn">${ic(icon, 20)}</span></button>`).join("")}
+  </div></div>`;
 }
 
 function tripFields(root, n){
@@ -1627,13 +1672,14 @@ function catRow(it){
     const when = it.type === "stay"
       ? `${dShort(it.date)} – ${dShort(it.endDate)}`
       : `${dShort(it.date)}${it.time ? " · " + it.time : ""}`;
-    return swipeItem(it, "c:" + it.id, `<button class="cat-row" data-act="item" data-id="${esc(it.id)}"><span class="dot-sm t-${it.type}" aria-hidden="true"></span><span class="grow"><span class="ttl">${esc(briefName(it.title))}</span><br><span class="muted small">${esc(when)}${it.type !== "stay" && subOf(it) ? " · " + esc(subOf(it)) : ""}</span></span>${ic("chev",18)}</button>`);
+    return swipeItem(it, "c:" + it.id, `<button class="cat-row cat-row-ic" data-act="item" data-id="${esc(it.id)}"><span class="thumb tc ${toneOf(it)}" aria-hidden="true">${ic(itemIcon(it),20)}</span><span class="grow"><span class="ttl">${esc(briefName(it.title))}</span><br><span class="muted small">${esc(when)}${it.type !== "stay" && subOf(it) ? " · " + esc(subOf(it)) : ""}</span></span>${ic("chev",18)}</button>`);
 }
 function filteredIdeas(){return S.items.filter(i => i.type === "idea" && (!S.ideaFilter||(i.data||{}).kind===S.ideaFilter) && (!S.ideaQuery || (briefName(i.title)+" "+(i.data||{}).kind).toLocaleLowerCase().includes(S.ideaQuery.trim().toLocaleLowerCase()))).sort((a,b) => (!!plannedFrom(a.id) - !!plannedFrom(b.id)) || (a.createdAt||0) - (b.createdAt||0));}
 function selectTab(k, landed){
   const cur = ["planning","idea","info","money","help"].includes(S.catTab) ? S.catTab : "";
   k = k || "";
   S.tabFrom = landed ? TRIP_TABS.findIndex(x => x[0] === k) : Math.max(0, TRIP_TABS.findIndex(x => x[0] === cur));
+  hmTabAnim(cur, k);
   S.catTab = k; S.sheet = null; S.dockHidden = false;
   if(k === "planning") S.planner ||= {query:"", filter:""};
   render(); if(k !== cur) window.scrollTo(0,0);
@@ -2292,15 +2338,32 @@ function vTrip(){
       ${entries.length ? `<ul class="day-list">${dailyEntryRows(entries,d,isToday?(next||"end"):null)}</ul>` : `<div class="card empty" style="padding:22px"><p class="muted small">ยังไม่มีแผนสำหรับวันนี้</p></div>`}`}
     ${loose.length ? `<div class="sec-h"><h2>นอกช่วงวันทริป</h2></div>
       <ul class="day-list">${loose.map(it => entryHtml({it, time:it.time, title:it.title, sub:dShort(it.date)})).join("")}</ul>` : ""}`;
+  const head = tripHead(t, d, tab);
   return `<main class="screen has-tabbar">
     <div class="trip-top">
-    <section class="trip-bar cv-${tone(t.id)}">${tripArt(d && d >= today() ? wxFor(d) : null)}
+    ${head}${pin ? `<div class="pin-cal">${pin}</div>` : ""}</div>
+    <section class="stack page page-${tab||"home"}" style="gap:14px">${page}</section>
+  </main>${tabBar(tab)}`;
+}
+function tripCover(t, d, cls, live){ return `<section class="trip-bar cv-${tone(t.id)}${cls}" ${live ? `title="${EN ? "Double-tap for the map" : "แตะสองครั้งเพื่อดูแผนที่"}"` : `aria-hidden="true" inert`}>${tripArt(d && d >= today() ? wxFor(d) : null)}
       <button class="round" data-act="home" aria-label="กลับไปทริปของฉัน">${ic("back")}</button>
       <div class="tb-text"><h1${[...String(t.name||"")].length > 16 ? ' class="long"' : ''}>${esc(t.name)}</h1><span class="muted small">${esc(rangeLabel(t))}</span>${tbWx(d)}</div>
       <button class="round" data-act="trip-more" aria-label="เพิ่มเติม">${ic("more",20)}</button>
-    </section>${pin ? `<div class="pin-cal">${pin}</div>` : ""}</div>
-    <section class="stack page page-${tab||"home"}" style="gap:14px">${page}</section>
-  </main>${tabBar(tab)}`;
+    </section>`; }
+/* the trip header: the cover, or in map mode the day on a small map (tapping a travel row lights its route up) */
+function tripHead(t, d, tab){
+  const anim = S.hmAnim && Date.now() - S.hmAnim.at < 600 ? S.hmAnim.k : "";
+  const mapHead = !!(S.mapMode && d && (tab === "" || anim === "shrink"));   // on another page the map only shows while it shrinks away
+  if(mapHead){ S.hm ||= {date:"", leg:""}; if(S.hm.date !== d){ S.hm.date = d; S.hm.leg = ""; S.hm.err = ""; } }
+  /* the cover grows into the map (and back): the cover fades over the map while the card changes height;
+     a redraw part way through carries on from where it was */
+  const animAt = `--hmfrom:${S.coverH || 113}px${anim ? `;--ad:-${Date.now() - S.hmAnim.at}ms` : ""}`;
+  const cover = (cls, live) => tripCover(t, d, cls, live);
+  return mapHead ? `<section class="trip-map cv-${tone(t.id)}${anim ? " " + anim : ""}" style="${animAt}" title="${EN ? "Double-tap for the cover" : "แตะสองครั้งเพื่อกลับเป็นภาพปก"}"><div class="hm-slot" id="hm-slot">${S.hm.err ? `<p class="dm-msg">${esc(S.hm.err)}</p>` : ""}</div>
+      <div class="hm-ov" style="top:10px;left:10px;right:60px"><button class="round" data-act="home" aria-label="กลับไปทริปของฉัน">${ic("back")}</button><div class="hm-title">${esc(t.name)} · ${esc(dLong(d))}</div></div>
+      <div class="hm-ov" style="top:10px;right:10px"><button class="round" data-act="trip-more" aria-label="เพิ่มเติม">${ic("more",20)}</button></div>
+      ${anim ? cover(" hm-cover", false) : ""}
+    </section>` : cover("", true);
 }
 /* the floating glass tab bar: four pages, a pill that slides to the one chosen (tap, or slide a finger along the bar) */
 const TRIP_TABS = [["","หน้าหลัก","home"],["planning","วางแผน","calendar"],["help","AI","spark"],["money","ค่าใช้จ่าย","wallet"],["info","ข้อมูล","file"]];
@@ -2431,6 +2494,206 @@ function vGuide(s){
     <div class="guide-dots">${GUIDE.map((_, k) => `<button type="button" data-act="guide-go" data-n="${k}" aria-label="ขั้นที่ ${k + 1}" aria-current="${k === i ? "step" : "false"}"></button>`).join("")}</div>
     <div class="guide-nav">${i > 0 ? `<button type="button" class="btn" data-act="guide-go" data-n="${i - 1}">ย้อนกลับ</button>` : `<button type="button" class="btn" data-act="guide-close">ข้าม</button>`}${i < n - 1 ? `<button type="button" class="btn primary" data-act="guide-go" data-n="${i + 1}">ถัดไป</button>` : `<button type="button" class="btn primary" data-act="guide-close">เริ่มใช้งาน</button>`}</div>
   </div></div>`;
+}
+/* ---------- day map: a free map (OpenFreeMap, no key) with the day's stops in order and the routes chosen for each leg ---------- */
+const MAP_LIB = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl";
+const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
+const DM = {lib:null, style:null, map:null, box:null, markers:[], stops:[], date:"", sig:""};
+function dayMapLib(){
+  return DM.lib ||= new Promise((ok, no) => {
+    const css = document.createElement("link"); css.rel = "stylesheet"; css.href = MAP_LIB + ".css"; document.head.appendChild(css);
+    const js = document.createElement("script"); js.src = MAP_LIB + ".js"; js.onload = () => ok(window.maplibregl); js.onerror = () => { DM.lib = null; no(new Error("map_offline")); }; document.head.appendChild(js);
+  });
+}
+/* the colourful style, roads and water a little softer so the plan stands out */
+async function dayMapStyle(){
+  if(DM.style) return DM.style;
+  const st = await (await fetch(MAP_STYLE)).json();
+  for(const l of st.layers){ const id = l.id, p = l.paint || (l.paint = {});
+    if(l.type === "line" && /^(road|tunnel|bridge)_/.test(id)){
+      if(/casing/.test(id)) p["line-color"] = /service|minor|street/.test(id) ? "#E0D8CE" : "#EAB886";
+      else if(/motorway/.test(id)) p["line-color"] = "#FBCB8A";
+      else if(/trunk_primary|link/.test(id)) p["line-color"] = "#FDE2AA";
+      else if(/secondary_tertiary/.test(id)) p["line-color"] = "#FFF1CF";
+    }
+    if(/water/.test(id) && l.type === "fill") p["fill-color"] = "#BCD8EE";
+    if(/water/.test(id) && l.type === "line") p["line-color"] = "#BCD8EE";
+    if(/park|wood|grass/.test(id) && l.type === "fill") p["fill-color"] = "#D6EAC6";
+  }
+  return DM.style = st;
+}
+/* Google's encoded route line → [lng, lat] points */
+function decodePoly(str){
+  const out = []; let i = 0, lat = 0, lng = 0;
+  while(i < str.length){ for(const k of [0, 1]){ let b, sh = 0, r = 0; do { b = str.charCodeAt(i++) - 63; r |= (b & 31) << sh; sh += 5; } while(b >= 32 && i <= str.length);
+      const d = r & 1 ? ~(r >> 1) : r >> 1; if(k) lng += d; else lat += d; } out.push([lng / 1e5, lat / 1e5]); }
+  return out;
+}
+const llOf = d => d && d.lat !== "" && d.lat != null && isFinite(+d.lat) && isFinite(+d.lon) ? [+d.lon, +d.lat] : null;
+/* the day's stops (places and where we sleep) in plan order, and each leg's line */
+function dayMapData(date){
+  const legs = manualTravelLegs(date), at = {}, stops = [];
+  for(const l of legs){ const d = l.saved?.data || {}; if(d.a) at[l.fromId] ||= [d.a[1], d.a[0]]; if(d.b) at[l.toId] ||= [d.b[1], d.b[0]]; }
+  let n = 0; const entries = dayEntries(date);
+  entries.forEach((e, k) => {
+    const it = e.it, d = it.data || {};
+    if(it.type === "flight"){   // the airport: landing (arrival row, or a flight with plans after it) or leaving
+      const land = e.phase === "arr" || (arrDateOf(it) === date && entries.slice(k + 1).some(x => ["place", "stay"].includes(x.it.type) && !x.night));
+      const end = land ? "to" : "from", ll = d.airV === 2 && d[end + "Lat"] != null && d[end + "Lat"] !== "" ? [+d[end + "Lon"], +d[end + "Lat"]] : null;
+      stops.push({id:it.id, name:(land ? (EN ? "Arrive " : "ถึง ") : (EN ? "Leave " : "ออกจาก ")) + [d[end], d[end + "City"]].filter(Boolean).join(" "), air:true, n:0, tone:"t-flight", ll}); return;
+    }
+    if(!["place", "stay"].includes(it.type)) return;
+    const ll = llOf(d) || at[it.id] || null, title = briefName(it.title || "");
+    stops.push({id:it.id, name:e.start ? (EN ? "From " : "เริ่มจาก ") + title : e.night ? (EN ? "Back to " : "กลับ ") + title : title, stay:it.type === "stay", n:it.type === "stay" ? 0 : ++n, tone:it.type === "stay" ? "t-stay" : toneOf(it), ll});
+  });
+  const lines = [], rows = [];
+  const way = l => { const d = l.saved?.data; if(d) return {mode:d.mode || "", minutes:d.durationMinutes, poly:d.poly || ""};
+    const r = travelResultsCache.get(travelCacheKey(l))?.result?.routes?.[0]; return r ? {mode:travelModeFor(r), minutes:r.minutes, poly:r.poly || "", guess:true} : null; };   // not saved yet: the quickest route found
+  const llAt = id => (stops.find(x => x.id === id) || {}).ll;
+  legs.forEach((l, i) => { const w = way(l), a = llAt(l.fromId), b = llAt(l.toId);
+    if(w?.poly) lines.push({type:"Feature", properties:{id:"L" + i}, geometry:{type:"LineString", coordinates:decodePoly(w.poly)}});
+    else if(a && b && (a[0] !== b[0] || a[1] !== b[1])) lines.push({type:"Feature", properties:{id:"L" + i}, geometry:{type:"LineString", coordinates:[a, b]}}); });   // Junbi: no road shape, just which way the day goes
+  /* the list: each stop, then the way to the next one */
+  stops.forEach((x, k) => { rows.push({stop:k});
+    const i = legs.findIndex(l => l.fromId === x.id && stops[k + 1] && l.toId === stops[k + 1].id), l = legs[i];
+    const w = l && way(l); if(w) rows.push({leg:"L" + i, has:!!w.poly, label:(w.guess ? "แนะนำ " : "") + [w.mode, w.minutes ? w.minutes + " นาที" : ""].filter(Boolean).join(" · "), mode:w.mode});
+    else if(l) rows.push({leg:"L" + i, has:false, label:"ยังไม่ได้เลือกการเดินทาง", mode:""}); });
+  return {stops, lines, rows};
+}
+/* the map credit (needed by OpenStreetMap) stays a small i, and opens only when tapped */
+function dmLabels(){
+  const shown = [];
+  for(const m of DM.markers){ const b = m.getElement().querySelector(".dm-name"); if(!b) continue; b.classList.remove("off");
+    const r = b.getBoundingClientRect(), hit = shown.some(o => r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom > o.top);
+    if(hit) b.classList.add("off"); else shown.push(r); }
+}
+function dmAttribSmall(){ const a = DM.box?.querySelector(".maplibregl-ctrl-attrib.maplibregl-compact"); if(a){ a.removeAttribute("open"); a.classList.remove("maplibregl-compact-show"); } }
+/* map mode: the trip header shows the day on a map */
+const dmCtx = () => document.getElementById("hm-slot") && S.hm?.date ? S.hm : null;
+const dmPad = () => ({top:90, bottom:30, left:44, right:44});
+/* the small map pans and pinch-zooms; a double tap there switches back to the cover, so it does not zoom */
+function dmInteract(full){ const m = DM.map; if(!m || DM.live === full) return; DM.live = full;
+  for(const h of ["scrollZoom", "boxZoom", "doubleClickZoom", "keyboard"]) full ? m[h].enable() : m[h].disable(); m.dragPan.enable(); m.touchZoomRotate.enable(); }
+/* switch the trip header between the cover and the map, growing or shrinking smoothly */
+const curTab = () => ["planning","idea","info","money","help"].includes(S.catTab) ? S.catTab : "";
+function hmSwapHead(){
+  const el = document.querySelector(".trip-top > .trip-map, .trip-top > .trip-bar"), t = S.trip;
+  if(!el || S.view !== "trip" || !t){ render(); return; }
+  el.outerHTML = tripHead(t, tripDates(t)[S.day], curTab()); dayMapMount();
+}
+/* leaving the map page shrinks the map back into the cover; coming back grows it again */
+function hmTabAnim(from, to){
+  if(!S.mapMode || !S.trip || !tripDates(S.trip)[S.day] || (from === "") === (to === "")) return;
+  if(to === ""){ S.hmAnim = {k:"grow", at:Date.now()}; return; }
+  const a = S.hmAnim = {k:"shrink", at:Date.now()};
+  setTimeout(() => { if(S.hmAnim === a){ S.hmAnim = null; hmSwapHead(); } }, 400);
+}
+function mapModeSwitch(on){
+  if(on === !!S.mapMode) return;
+  try { localStorage.setItem("junbi-app-mapmode", on ? "1" : ""); } catch(_){}
+  const bar = document.querySelector(".trip-bar:not(.hm-cover)"); if(bar) S.coverH = bar.offsetHeight;   // the map grows from (and shrinks back to) the cover's own height
+  const menu = S.sheet?.kind === "trip-more"; if(menu) S.sheet = null;
+  if(on){ S.mapMode = true; if(curTab()){ selectTab(""); return; } S.hmAnim = {k:"grow", at:Date.now()}; menu ? render() : hmSwapHead(); return; }
+  if(S.hmAnim?.k === "shrink") return;
+  if(!document.querySelector(".trip-map")){ S.mapMode = false; render(); return; }
+  const a = S.hmAnim = {k:"shrink", at:Date.now()}, m = document.querySelector(".trip-map");
+  if(menu) render();
+  else { m.style.setProperty("--ad", "0ms"); m.style.setProperty("--hmfrom", (S.coverH || 113) + "px"); m.classList.add("shrink");   // change the map card in place: no redraw as it starts
+    m.insertAdjacentHTML("beforeend", tripCover(S.trip, tripDates(S.trip)[S.day], " hm-cover", false)); }
+  setTimeout(() => { if(S.hmAnim !== a) return; S.mapMode = false; S.hmAnim = null; hmSwapHead(); }, 400);
+}
+{ let down = null, last = 0, lx = 0, ly = 0;
+  document.addEventListener("pointerdown", e => { const h = e.isPrimary && S.view === "trip" && e.target.closest?.(".trip-bar,.trip-map");
+    down = h && !e.target.closest("button,a,.maplibregl-ctrl,.maplibregl-marker") ? {x:e.clientX, y:e.clientY, t:Date.now()} : null; if(!down) last = 0; }, {passive:true});
+  document.addEventListener("pointerup", e => { const d = down; down = null; if(!d || !e.isPrimary) return;
+    if(Math.hypot(e.clientX - d.x, e.clientY - d.y) > 12 || Date.now() - d.t > 320){ last = 0; return; }   // a drag or a long press
+    const now = Date.now(); if(now - last < 340 && Math.hypot(e.clientX - lx, e.clientY - ly) < 40){ last = 0; mapModeSwitch(!S.mapMode); }
+    else { last = now; lx = e.clientX; ly = e.clientY; } }, {passive:true});
+  document.addEventListener("pointercancel", () => { down = null; last = 0; }, {passive:true}); }
+/* in map mode the travel row whose route is lit up is lit up too */
+function hmMark(){
+  const s = S.hm, on = s && document.getElementById("hm-slot") && s.leg ? manualTravelLegs(s.date)[+s.leg.slice(1)]?.saved?.id : "";
+  document.querySelectorAll(".day-list .entry-move").forEach(b => b.classList.toggle("map-on", !!on && b.dataset.id === on));
+}
+async function dayMapMount(){
+  hmMark();
+  const s = dmCtx(), head = true, slot = document.getElementById("hm-slot"); if(!s || !slot) return;
+  if(!DM.box){ DM.box = document.createElement("div"); DM.box.className = "dm-map wait"; }
+  slot.prepend(DM.box);   // the map lives in one box that is moved into each redraw, so it is not rebuilt
+  const left = S.hmAnim ? 480 - (Date.now() - S.hmAnim.at) : 0;   // while the card grows or shrinks, only the picture moves; the map work waits
+  if(left > 0){ clearTimeout(DM.later); DM.later = setTimeout(dayMapMount, left); return; }
+  let gl, style;
+  try { [gl, style] = await Promise.all([dayMapLib(), dayMapStyle()]); }
+  catch(_){ if(dmCtx() === s && !s.err){ s.err = "ต้องใช้อินเทอร์เน็ตเพื่อโหลดแผนที่"; render(); } return; }
+  if(dmCtx() !== s) return;
+  if(!DM.map){
+    DM.map = new gl.Map({container:DM.box, style, center:[139.76, 35.68], zoom:11, attributionControl:{compact:true}, dragRotate:false, pitchWithRotate:false});
+    DM.map.touchZoomRotate.disableRotation();
+    DM.ready = new Promise(r => DM.map.once("load", r));
+    DM.map.on("resize", dmAttribSmall); DM.map.on("moveend", dmLabels); DM.map.once("load", dmAttribSmall);
+    await DM.ready;
+    DM.map.addSource("legs", {type:"geojson", data:{type:"FeatureCollection", features:[]}});
+    DM.map.addLayer({id:"leg-ride", type:"line", source:"legs", layout:{"line-cap":"round", "line-join":"round"}, paint:{"line-color":"#17808A", "line-width":2.5, "line-opacity":.85, "line-dasharray":[2, 1.6]}});
+    DM.map.addLayer({id:"leg-hi", type:"line", source:"legs", filter:["==", ["get", "id"], ""], layout:{"line-cap":"round", "line-join":"round"}, paint:{"line-color":"#FF8A00", "line-width":3.5, "line-dasharray":[2, 1.4]}});
+  }
+  await DM.ready; if(!DM.map.getSource("legs")) return;   // another redraw is still setting the map up
+  DM.box.classList.remove("wait");   // the first map fades in once it is ready
+  if(dmCtx() !== s) return;
+  DM.map.resize(); dmAttribSmall(); dmInteract(!head);
+  const where = head ? "head" : "sheet", {stops, lines} = dayMapData(s.date), sig = where + s.date + JSON.stringify(stops.map(x => [x.id, x.ll, x.n])) + lines.length + lines.map(f => f.geometry.coordinates.length).join();
+  if(DM.date !== s.date) setTimeout(() => dayMapFill(s.date), 300);
+  const nLL = stops.filter(x => x.ll).length;
+  if(sig === DM.sig) return; const moved = DM.date !== s.date || DM.nLL !== nLL || DM.where !== where; DM.where = where; DM.nLL = nLL; DM.sig = sig; DM.date = s.date; DM.stops = stops;
+  DM.map.getSource("legs").setData({type:"FeatureCollection", features:lines});
+  DM.map.setFilter("leg-hi", ["==", ["get", "id"], s.leg || ""]); DM.map.setPaintProperty("leg-ride", "line-opacity", s.leg ? .3 : .85);
+  DM.markers.forEach(m => m.remove()); DM.markers = [];
+  const placed = new Set();
+  for(const x of stops){ if(!x.ll || placed.has(x.id)) continue; placed.add(x.id);
+    const el = document.createElement("div"); el.className = "dm-drop " + x.tone; el.title = x.name;
+    el.innerHTML = `<svg viewBox="0 0 30 40" aria-hidden="true"><path d="M15 39C15 39 2 24.5 2 15a13 13 0 0 1 26 0c0 9.5-13 24-13 24z"/></svg><span>${x.air ? ic("flight",13) : x.stay ? ic("stay",13) : x.n}</span><b class="dm-name">${esc(x.name.replace(/^(เริ่มจาก|กลับ|ถึง|ออกจาก|From|Back to|Arrive|Leave) /, ""))}</b>`;
+    DM.markers.push(new gl.Marker({element:el, anchor:"bottom"}).setLngLat(x.ll).setPopup(new gl.Popup({offset:[0, -34], closeButton:false}).setText(x.name)).addTo(DM.map)); }
+  const pts = [...stops.filter(x => x.ll).map(x => x.ll), ...lines.flatMap(f => f.geometry.coordinates)];
+  const sel = s.leg && lines.find(f => f.properties.id === s.leg);
+  if(sel && (moved || DM.legShown !== s.leg)){ DM.legShown = s.leg; const c = sel.geometry.coordinates; DM.map.fitBounds(c.reduce((b, p) => b.extend(p), new gl.LngLatBounds(c[0], c[0])), {padding:dmPad(s), maxZoom:16, duration:0}); }
+  else if(moved && pts.length){ const b = pts.reduce((b, p) => b.extend(p), new gl.LngLatBounds(pts[0], pts[0])); DM.map.fitBounds(b, {padding:head ? dmPad(s) : {top:50, bottom:40, left:40, right:40}, maxZoom:15, duration:0}); }
+  requestAnimationFrame(dmLabels);
+}
+/* the day shown first: find pins for places with no coordinates, and the route line of legs saved before lines were kept */
+const DMF = {busy:false, asked:new Set()};
+async function dayMapFill(date){
+  if(DMF.busy || !CONNECTED || !navigator.onLine || !S.trip) return; DMF.busy = true;
+  const tripId = S.trip.id, still = () => dmCtx()?.date === date && S.trip?.id === tripId;
+  let changed = false;
+  try {
+    const need = dayMapData(date).stops.filter(x => !x.ll && !DMF.asked.has(x.id)).map(x => x.id);
+    if(need.length){ need.forEach(id => DMF.asked.add(id));
+      try { const r = await api("placeCoords", {tripId, ids:need});
+        for(const [id, ll] of Object.entries(r.coords || {})){ const it = S.items.find(i => i.id === id); if(!it) continue;
+          const add = it.type === "flight" ? ll : llOf(it.data) ? null : {lat:ll.lat, lon:ll.lon, coordsFrom:"geocode"};
+          if(!add) continue;
+          it.data = {...(it.data || {}), ...add}; changed = true;
+          store.updateItem(tripId, id, {data:it.data}).catch(() => {}); }   // Junbi: kept on the item, so the search runs once
+      } catch(_){} }
+    if(changed && still()) dayMapMount();
+    /* Junbi: no route lookups in the background (they would use the person's own Gemini quota) */
+  } finally { DMF.busy = false; }
+}
+function dayMapLeg(id){
+  const s = dmCtx(); if(!s) return;
+  s.leg = s.leg === id ? "" : id; DM.legShown = s.leg;   // tap again to see the whole day
+  hmMark();
+  if(!DM.map || DM.where !== (s === S.hm ? "head" : "sheet")) return;
+  DM.map.setFilter("leg-hi", ["==", ["get", "id"], s.leg || ""]);
+  DM.map.setPaintProperty("leg-ride", "line-opacity", s.leg ? .3 : .85);
+  const f = s.leg && dayMapData(s.date).lines.find(x => x.properties.id === s.leg), pts = f ? f.geometry.coordinates : DM.stops.filter(x => x.ll).map(x => x.ll);
+  if(pts.length){ const b = pts.reduce((b, p) => b.extend(p), new maplibregl.LngLatBounds(pts[0], pts[0])); DM.map.fitBounds(b, {padding:dmPad(s), maxZoom:16}); }
+}
+/* map mode, tapping a travel row: the first tap shows its route on the map, a second tap opens it */
+function hmLegTap(it){
+  const s = S.hm; if(it?.type !== "move" || !s || !document.getElementById("hm-slot")) return false;
+  const i = manualTravelLegs(s.date).findIndex(l => l.saved?.id === it.id), id = "L" + i;
+  if(i < 0 || s.leg === id || !dayMapData(s.date).lines.some(f => f.properties.id === id)) return false;
+  dayMapLeg(id); return true;
 }
 /* swipe the picture sideways for the next or previous step */
 document.addEventListener("touchstart", e => { const f = e.target.closest && e.target.closest(".guide-shot"); vGuide.x = f ? e.touches[0].clientX : null; }, {passive:true});
@@ -2644,7 +2907,10 @@ async function runTravelPrefetch(){
         try{
           const result=await api('travelOptions',{ai:false,tripId,...q,fromId:leg.fromId,toId:leg.toId,from:leg.from,to:leg.to});
           if(!travelResultMatches(q,result))throw {code:'travel_date_mismatch'};
-          travelResultsCache.set(key,{result,selectedIndex:leg.saved?(result.routes||[]).findIndex(r=>travelModeFor(r)===sd.mode&&r.minutes===Number(sd.durationMinutes)):-1});
+          const sel=leg.saved?(result.routes||[]).findIndex(r=>travelModeFor(r)===sd.mode&&r.minutes===Number(sd.durationMinutes)):-1;
+          travelResultsCache.set(key,{result,selectedIndex:sel});
+          const pick=leg.saved&&!sd.poly&&((result.routes||[])[sel]||(result.routes||[]).find(r=>travelModeFor(r)===sd.mode));
+          if(pick?.poly)store.updateItem(tripId,leg.saved.id,{data:{poly:pick.poly,a:pick.a||null,b:pick.b||null}}).catch(()=>{});   // saved before routes kept their line
           const sh=S.sheet;if(sh?.kind==='travel-leg'&&sh.cacheKey===key&&!sh.lookup&&!sh.lookupBusy&&!sh.chosen){sh.lookup=result;sh.time=result.time;sh.lookupKey=travelQueryKey(sh);sh.lookupError='';render();}
         }catch(e){travelPrefetch.failed.add(key);if(['travel_quota','offline','not_connected','auth_required','travel_maps_unavailable'].includes(e?.code))return;}
         await new Promise(r=>setTimeout(r,600));
@@ -2679,14 +2945,14 @@ function applyTravelChoice(ai,index){
   const s=S.sheet;if(s?.kind!=='travel-leg'||!s.lookup||s.lookupKey!==travelQueryKey(s))return;
   const choice=ai?s.lookup.advice:s.lookup.routes?.[index];if(!choice)return;
   const factual=ai?s.lookup.routes?.[0]:choice;
-  if(factual){s.mode=travelModeFor(factual);s.minutes=factual.minutes;s.note=travelRouteNote(factual);}
+  if(factual){s.mode=travelModeFor(factual);s.minutes=factual.minutes;s.note=travelRouteNote(factual);s.poly=factual.poly||'';s.pa=factual.a||null;s.pb=factual.b||null;}
   else{s.mode=choice.mode;s.minutes=choice.minutes;s.note=choice.note;}
   s.travelSource=ai?'AI วิเคราะห์จาก Google Maps · เวลาประมาณ':'Google Maps · เวลาประมาณ';
   s.travelCheckedAt=s.lookup.checkedAt;s.selectedIndex=ai?0:index;s.chosen=true;s.lookupKey=travelQueryKey(s);travelResultsCache.set(s.cacheKey,{result:s.lookup,selectedIndex:s.selectedIndex});render();
 }
 
 function openTravelSheet(leg){
-  const d=leg.saved?.data||{};S.sheet={kind:'travel-leg',tripId:S.trip.id,date:leg.date,key:leg.key,memo:d.memo||'',mode:d.mode||'ขนส่งสาธารณะ',minutes:d.durationMinutes??'',time:leg.saved?.time||travelDepartureHint(leg),note:leg.saved?.sub||'',timezone:d.timezone||travelTimezone(leg),travelSource:d.travelSource||'',travelCheckedAt:d.travelCheckedAt||'',chosen:!!leg.saved,approximateRoutes:true,departTime:leg.saved?.time||'',cacheKey:travelCacheKey(leg)};const cached=travelResultsCache.get(S.sheet.cacheKey);if(cached){S.sheet.lookup=cached.result;S.sheet.time=cached.result.time;S.sheet.lookupKey=travelQueryKey(S.sheet);if(cached.selectedIndex>=0)applyTravelChoice(false,cached.selectedIndex);else render();}else{render();lookupTravel();}
+  const d=leg.saved?.data||{};S.sheet={kind:'travel-leg',tripId:S.trip.id,date:leg.date,key:leg.key,memo:d.memo||'',poly:d.poly||'',pa:d.a||null,pb:d.b||null,mode:d.mode||'ขนส่งสาธารณะ',minutes:d.durationMinutes??'',time:leg.saved?.time||travelDepartureHint(leg),note:leg.saved?.sub||'',timezone:d.timezone||travelTimezone(leg),travelSource:d.travelSource||'',travelCheckedAt:d.travelCheckedAt||'',chosen:!!leg.saved,approximateRoutes:true,departTime:leg.saved?.time||'',cacheKey:travelCacheKey(leg)};const cached=travelResultsCache.get(S.sheet.cacheKey);if(cached){S.sheet.lookup=cached.result;S.sheet.time=cached.result.time;S.sheet.lookupKey=travelQueryKey(S.sheet);if(cached.selectedIndex>=0)applyTravelChoice(false,cached.selectedIndex);else render();}else{render();lookupTravel();}
 }
 function editManualTravel(it){
   if(!it?.data?.legKey)return false;const leg=manualTravelLegs(it.date).find(l=>l.saved?.id===it.id);if(!leg)return false;openTravelSheet(leg);return true;
@@ -2702,7 +2968,7 @@ async function saveTravelLeg(){
   const leg=manualTravelLegs(s.date).find(l=>l.key===s.key);if(!leg){toast('ลำดับสถานที่เปลี่ยนแล้ว');return;}
   const minutes=s_(s.minutes)===''?null:Number(s.minutes);
   if(minutes!==null&&(!Number.isInteger(minutes)||minutes<1||minutes>1440)){toast('ระบุเวลาระหว่าง 1–1440 นาที');return;}
-  const data={from:leg.from,to:leg.to,mode:s.mode,durationMinutes:minutes,legKey:leg.key,legFromId:leg.fromId,legToId:leg.toId,timezone:s.timezone||'',travelSource:s.travelSource||'',travelCheckedAt:s.travelCheckedAt||'',memo:s_(s.memo)};
+  const data={from:leg.from,to:leg.to,mode:s.mode,durationMinutes:minutes,legKey:leg.key,legFromId:leg.fromId,legToId:leg.toId,timezone:s.timezone||'',travelSource:s.travelSource||'',travelCheckedAt:s.travelCheckedAt||'',memo:s_(s.memo),poly:s.chosen?(s.poly||''):'',a:s.chosen?s.pa||null:null,b:s.chosen?s.pb||null:null};
   s.busy=true;render();
   try{
     let id=leg.saved?.id;
@@ -3218,7 +3484,7 @@ function vSheet(){
   if(s.kind === "idea-recommend")return vIdeaRecommend(s);
   if(s.kind === "day-ideas") return "";
   if(s.kind === "trip-menu") return vTripMenu(s);
-  if(s.kind === "trip-more") return vTripMore();
+  if(s.kind === "trip-more") return vTripMore(s);
   if(s.kind === "trip-edit") return vTripEdit(s);
   if(s.kind === "share-in") return vShareIn(s);
   if(s.kind === "account") return vAccount();
@@ -3317,6 +3583,7 @@ function render(){
   if(pageY && Math.abs(window.scrollY - pageY) > 2) window.scrollTo({top: pageY, behavior: "instant"});
   const modalSheet=S.view==="upload"||(S.sheet&&S.sheet.kind!=="day-ideas");
   const overlayLocked=!!modalSheet;
+  if(S.view === "trip") dayMapMount();
   lockOverlayPage(overlayLocked);document.documentElement.classList.toggle("lock",overlayLocked);   // measure the pinned header before anything stops the page scrolling
   document.body.style.overflow = modalSheet ? "hidden" : "";
   if(S.sheet && S.sheet.kind === "doc") docMount();
@@ -3680,11 +3947,38 @@ document.addEventListener("focusin", e => {
   if(!e.target.closest || !e.target.closest(".dock-body") || !/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
   fieldToReveal = e.target; clearTimeout(revealTimer); revealTimer = setTimeout(revealField, 700);   // fallback when no keyboard appears
 });
+/* tapping yen / baht in the expense card keeps the field being typed in (and its keyboard) as it is */
+document.addEventListener("mousedown", e => { if(e.target.closest?.(".exp-sheet .exp-seg button") && /^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName || "")) e.preventDefault(); });
 /* iPhone: when the keyboard opens, fit sheets to the visible area above it */
 (function(){
   const vv = window.visualViewport; if(!vv) return;
+  const KB_KEY = () => "junbi-app-kb-" + window.innerHeight;
+  /* the visible area changes in one step; the expense sheet then travels to its new place with one smooth movement
+     (a transform, drawn by the graphics chip, instead of resizing the frame on every step) */
+  let lastH = 0;
+  const placeSheet = (h, top) => {
+    const r = document.documentElement.style, sh = document.querySelector(".exp-sheet");
+    if(!sh){ lastH = 0; r.setProperty("--vvh", h + "px"); r.setProperty("--vvt", top + "px"); return; }
+    if(Math.abs(h - (lastH || window.innerHeight)) < 80){ lastH = h; r.setProperty("--vvh", h + "px"); r.setProperty("--vvt", top + "px"); return; }
+    const from = sh.getBoundingClientRect().top;   // where it is now (part way through a movement too)
+    r.setProperty("--vvh", h + "px"); r.setProperty("--vvt", top + "px"); lastH = h;
+    const d = from - sh.getBoundingClientRect().top; if(Math.abs(d) < 2) return;
+    sh.style.transition = "none"; sh.style.transform = `translateY(${d}px)`; sh.getBoundingClientRect();
+    sh.style.transition = "transform .42s cubic-bezier(.32,.72,0,1)"; sh.style.transform = "";
+  };
   const fit = () => {
-    const r = document.documentElement.style; r.setProperty("--vvh", vv.height + "px"); r.setProperty("--vvt", vv.offsetTop + "px");
+    /* The expense sheet (one model for every case, see expKeys below):
+       - iPhone never slides the page for its fields (they are focused with preventScroll), it only shrinks the visible area;
+       - while the keyboard is up, the sheet sits above the tallest keyboard this phone has shown (remembered), so moving between
+         the number pad and the taller letter keyboard never moves it;
+       - when the keyboard comes up or goes down, the sheet glides there, the same way for both fields. */
+    const exp = !!document.querySelector(".exp-sheet"), kbUp = vv.height < window.innerHeight * .8;
+    let h = vv.height;
+    if(exp && kbUp){ let tall = h;
+      try { tall = Math.min(+(localStorage.getItem(KB_KEY()) || 1e9), h); localStorage.setItem(KB_KEY(), tall); } catch(_){}
+      h = tall; }
+    placeSheet(h, vv.offsetTop);
+    const r = document.documentElement.style;
     // keyboard height: the bottom bar and its panel sit on top of the keyboard instead of behind it
     const editing=/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName||'');
     const kb = editing?Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)):0;
@@ -3698,6 +3992,13 @@ document.addEventListener("focusin", e => {
     clearTimeout(settle); settle = setTimeout(revealField, 160);
   };
   vv.addEventListener("resize", onChange); vv.addEventListener("scroll", onChange); fit();
+  /* expKeys: a tap on a field of the expense sheet focuses it without iPhone's page slide (that slide is what made the two
+     fields move differently: smooth for one, a jump for the other) */
+  document.addEventListener("touchend", e => { const el = e.target.closest?.(".exp-sheet input:not([type=hidden])");
+    if(!el || document.activeElement === el || e.touches.length) return;
+    e.preventDefault(); el.focus({preventScroll:true});
+    if(vv.height >= window.innerHeight * .8){ let tall = 0; try { tall = +(localStorage.getItem(KB_KEY()) || 0); } catch(_){}
+      if(tall) placeSheet(tall, 0); } }, {passive:false});
 })();
 document.addEventListener("focusout", e => {
   if(!(e.target.dataset && e.target.dataset.suggest !== undefined)) return;
@@ -3780,7 +4081,7 @@ const EXP_TONES = [["#E0ECFF","#2B61B2"],["#FCE4EC","#B83A68"],["#E2F5E2","#2F7A
 const expTone = u => { const k = expPeople().indexOf(u), t = EXP_TONES[(k < 0 ? 0 : k) % EXP_TONES.length]; return `background:${t[0]};color:${t[1]}`; };
 function expRow(i, s, swipe){
   const d = i.data || {}, all = expPeople(), who = expSplitOf(i, all), open = s.pick === i.id, key = "x:" + i.id, ask = S.delAsk === key;
-  const row = `<button type="button" class="exp-row" data-act="exp-pick" data-id="${esc(i.id)}" aria-expanded="${open}"><span class="grow"><b>${esc(i.title || "ไม่ระบุ")}</b> <small>· ${swipe ? esc(expName(d.by)) + " · " + esc(expWhen(d.at)) : esc(expName(d.by)) + " จ่าย · " + (who.length === all.length ? `หารทุกคน (${who.length})` : `หาร ${who.length} คน`)}</small></span><span class="exp-amt">${esc(money(d.amount, d.cur))}</span></button>`;
+  const row = `<button type="button" class="exp-row" data-act="exp-pick" data-id="${esc(i.id)}" aria-expanded="${open}"><span class="grow"><b>${esc(i.title || "ไม่ระบุ")}</b> <small>· ${swipe ? esc(expName(d.by)) + " · " + esc(expWhen(d.at)) : esc(expName(d.by)) + " จ่าย · " + (who.length === all.length ? `หารทุกคน (${who.length})` : `หาร ${who.length} คน`)}</small></span><span class="exp-amt">${expAmtIn(d, expViewCur())}</span></button>`;
   const people = open ? `<div class="exp-who">${all.map(u => { const on = who.includes(u), n = expName(u); return `<button type="button" class="${on ? "on" : ""}" data-act="exp-who" data-u="${esc(u)}" aria-pressed="${on}"><span class="exp-av" style="${on ? expTone(u) : ""}">${esc(trText(n).slice(0, 1).toUpperCase())}</span><span class="exp-av-n">${esc(n)}</span></button>`; }).join("")}</div>` : "";
   if(!swipe) return `<li class="${open ? "open" : ""}">${row}${people}</li>`;
   return `<li class="${open ? "open" : ""}"><div class="trow erow${S.swipeOpen === key ? " open" : ""}${ask ? " ask" : ""}" data-row="${esc(key)}" data-w="108">
@@ -3788,17 +4089,23 @@ function expRow(i, s, swipe){
       : `<button class="sw-btn sw-edit" data-act="exp-add" data-id="${esc(i.id)}" aria-label="แก้ไข">${ic("edit",18)}</button><button class="sw-btn sw-del" data-act="entry-del" data-key="${esc(key)}" aria-label="ลบ">${ic("trash",18)}</button>`}</div>
     <div class="trow-slide">${row}</div></div>${people}</li>`;
 }
+/* each saved amount in the currency chosen at the top (¥ / ฿); the amount as it was paid stays underneath, small */
+function expAmtIn(d, view){
+  const cur = d.cur || "THB", v = cur === view ? null : fxConv(d.amount, cur, view);
+  return v == null ? esc(money(d.amount, cur)) : `${esc(money(v, view))}<small>${esc(money(d.amount, cur))}</small>`;
+}
 function expWhen(at){ if(!at) return ""; const d = new Date(at); return d.toLocaleDateString("th-TH", {day:"numeric", month:"short"}) + " " + d.toTimeString().slice(0, 5); }
 function vExpAdd(s){
   const it = s.id ? S.items.find(i => i.id === s.id) : null, d = (it && it.data) || {};
   let last = ""; try { last = localStorage.getItem("junbi-app-cur") || ""; } catch(_){}
-  const local = expLocal(), curs = local === "THB" ? ["THB"] : [local, "THB"], cur = d.cur || (curs.includes(last) ? last : curs[0]);
-  return `<div class="scrim" data-act="close-sheet"><div class="sheet" role="dialog" aria-modal="true" aria-label="จดค่าใช้จ่าย" data-stop="1">
+  const local = expLocal(), curs = local === "THB" ? ["THB"] : [local, "THB"], cur = s.cur || d.cur || (curs.includes(last) ? last : curs[0]);
+  const again = s.shown; s.shown = true;   // a redraw does not replay the card's entrance (it would move under the finger)
+  return `<div class="scrim exp-scrim" data-act="close-sheet"><div class="sheet exp-sheet${again ? " steady" : ""}" role="dialog" aria-modal="true" aria-label="จดค่าใช้จ่าย" data-stop="1">
     <form data-form="exp" class="stack exp-form" autocomplete="off">
       <div class="exp-amt-box"><label for="exp-amt" class="muted small">จำนวนเงิน</label>
-        <input id="exp-amt" class="exp-big" name="amount" inputmode="decimal" required placeholder="0" value="${d.amount != null ? esc(String(d.amount)) : ""}">
+        <input id="exp-amt" class="exp-big" name="amount" inputmode="decimal" required placeholder="0" data-bind="sheet:amount" value="${esc(s.amount ?? (d.amount != null ? String(d.amount) : ""))}">
         ${curs.length > 1 ? expCurSeg(cur, "exp-cur", curs) : ""}<input type="hidden" name="cur" value="${esc(cur)}"></div>
-      <label class="exp-what"><span class="muted small">ค่าอะไร</span><input id="exp-what" name="what" maxlength="60" placeholder="เช่น ราเมน, ตั๋วรถไฟ" value="${esc(it ? it.title || "" : "")}"></label>
+      <label class="exp-what"><span class="muted small">ค่าอะไร</span><input id="exp-what" name="what" maxlength="60" placeholder="เช่น ราเมน, ตั๋วรถไฟ" data-bind="sheet:what" value="${esc(s.what ?? (it ? it.title || "" : ""))}"></label>
       <p class="muted small" style="margin:-6px 0 0">บันทึกในชื่อ ${esc(it ? expName(d.by) : (S.myName || "ฉัน"))}</p>
       <div class="exp-actions"><button type="button" class="exp-btn exp-btn-back" data-act="exp-cancel">${ic("close",19)}ยกเลิก</button><button type="submit" class="exp-btn exp-btn-add">${ic("check",19)}บันทึก</button></div>
     </form>
@@ -4209,7 +4516,7 @@ document.addEventListener("click", async e => {
     case "cal-week": S.calWeek = Math.max(0, (S.calWeek ?? Math.floor((parseD(tripDates(t)[0]).getDay() + S.day) / 7)) + Number(el.dataset.d)); render(); break;
     case "cal-open": S.calOpen = !S.calOpen; S.calWeek = null; render(); break;
     case "day": S.calOpen = false; S.calWeek = null; if(S.sheet?.kind==='day-ideas'&&S.sheet.busy)break;S.day = Math.max(0,Math.min(tripDates(t).length-1,Number(el.dataset.i)||0));if(S.sheet?.kind==='day-ideas')S.sheet.date=tripDates(t)[S.day];if(!["planning","help"].includes(S.catTab))S.catTab="";S.dockHidden=false;S.clearAsk = null;render();break;
-    case "trip-more": S.sheet={kind:"trip-more"};render();break;
+    case "trip-more": { const r = el.getBoundingClientRect(); S.sheet = {kind:"trip-more", top:Math.round(r.bottom + 10), right:Math.round(innerWidth - r.right)}; render(); break; }
     case "lang-toggle": el.classList.toggle("en"); setTimeout(() => setLang(LANG === "en" ? "th" : "en"), 220); break;
     case "tab": selectTab(el.dataset.k); break;
     case "help-run": helpRun(); break;
@@ -4257,8 +4564,8 @@ document.addEventListener("click", async e => {
       break; }
     case "copy-share-send": { const s = S.sheet; if(!s?.key) break; try { await navigator.share({text:copyMsg(s.key)}); } catch(_){} break; }
     case "exp-cancel": S.sheet = null; render(); break;
-    case "exp-add": S.swipeOpen = null; S.delAsk = null; S.sheet = {kind:"exp-add", id:el.dataset.id || ""}; render(); setTimeout(() => { const f = document.getElementById("exp-amt"); if(f && !el.dataset.id) f.focus(); }, 60); break;
-    case "exp-cur": { const f = el.closest("form"); segSlide(el); f.elements.cur.value = el.dataset.cur; f.elements.amount.focus(); break; }
+    case "exp-add": S.swipeOpen = null; S.delAsk = null; S.sheet = {kind:"exp-add", id:el.dataset.id || ""}; render(); break;
+    case "exp-cur": { const f = el.closest("form"); segSlide(el); f.elements.cur.value = S.sheet.cur = el.dataset.cur; break; }
     case "exp-view": { if(S.segSwiped){ S.segSwiped = false; break; } let b = el; if(b.classList.contains("on")){ const o = [...b.parentNode.querySelectorAll("button")].find(x => x !== b); if(o) b = o; } try { localStorage.setItem("junbi-app-exp-view", b.dataset.cur); } catch(_){} segSlide(b); setTimeout(render, 280); break; }
     case "exp-pick": { const o = (S.expUI ||= {pick:""}); o.pick = o.pick === el.dataset.id ? "" : el.dataset.id; render(); break; }
     case "exp-who": { const o = (S.expUI || {}); const it = S.items.find(i => i.id === o.pick); if(!it) break; const all = expPeople(), cur = new Set(expSplitOf(it, all)), u = el.dataset.u;
@@ -4282,8 +4589,9 @@ document.addEventListener("click", async e => {
     case "export-open": S.sheet = {kind:"export", scope:"day", files:null, busy:""}; render(); break;
     case "export-run": exportRun(el.dataset.k); break;
     case "export-share": exportShare(); break;
-    case "item": {const it=S.items.find(i=>i.id===el.dataset.id);if(editManualTravel(it))break;S.sheet={kind:"item",id:el.dataset.id,confirm:false};render();break;}
-    case "close-sheet": if(S.sheet?.kind==="doc"&&S.sheet.back){S.sheet=S.sheet.back;render();break;} S.sheet?.lookupCtl?.abort();S.sheet?.ctl?.abort();S.sheet = null; render(); break;
+    case "item": {const it=S.items.find(i=>i.id===el.dataset.id);if(hmLegTap(it))break;if(editManualTravel(it))break;S.sheet={kind:"item",id:el.dataset.id,confirm:false};render();break;}
+    case "close-sheet": if(S.sheet?.kind==="trip-more"){ const sc=document.querySelector(".dial-scrim"); if(sc&&!sc.classList.contains("closing")){ sc.classList.add("closing"); const sh=S.sheet; setTimeout(()=>{ if(S.sheet===sh){ S.sheet=null; render(); } },200); } break; }   // the buttons fold back into ⋯ first
+      if(S.sheet?.kind==="doc"&&S.sheet.back){S.sheet=S.sheet.back;render();break;} S.sheet?.lookupCtl?.abort();S.sheet?.ctl?.abort();S.sheet = null; render(); break;
     case "doc-open": docOpen(el.dataset.id, Number(el.dataset.n) || 0); break;
     case "taxi-open": taxiOpen(el.dataset.id); break;
     case "sos-open": sosOpen(false); if(sosNeedsLocal()) sosLocalize(); sosAutoLoad(); break;
@@ -4459,7 +4767,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-mt1117-1";
+const BUILD = "junbi-mt1118-1";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
