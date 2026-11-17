@@ -3843,7 +3843,7 @@ function expCalc(){
 }
 function expPlanText(){ const c = expCalc(), v = expViewCur(), m = n => { const x = fxConv(n, "THB", v); return x == null ? money(n, "THB") : money(x, v); }; return [`${S.trip.name} · ค่าใช้จ่ายรวม ${m(c.total)}`, ...c.all.map(u => `${expName(u)} ${m(c.owe[u] || 0)}`)].join("\n"); }
 const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-const IOS_SHORTCUT = "";   // iCloud link of the ready-made "Junbi" shortcut; empty = show the build-it-yourself steps
+const IOS_SHORTCUT = "./Junbi.shortcut";   // iCloud link of the ready-made "Junbi" shortcut; empty = show the build-it-yourself steps
 const ADD_BASE = location.origin + location.pathname + "?add=";
 const EN = LANG === "en";
 const scStep = (n, title, body) => `<div class="sc-step"><span class="sc-n">${n}</span><div class="sc-body"><b>${title}</b>${body}</div></div>`;
@@ -3939,8 +3939,6 @@ function vShareIn(s){
   return `<div class="scrim" data-act="close-sheet"><div class="sheet" role="dialog" aria-modal="true" aria-label="ส่งเข้าทริป" data-stop="1">
     <div class="hd"><h2>ส่งเข้าทริปไหน?</h2><button class="round" data-act="close-sheet" aria-label="ปิด">${ic("close")}</button></div>${body}</div></div>`;
 }
-/* one-tap shortcut install: copy the private key first, then let the link open the signed shortcut */
-document.addEventListener('click',e=>{const a=e.target.closest?.('a.sc-get');if(!a)return;try{localStorage.setItem('junbi-app-share-on','1');}catch(_){}const k=a.dataset.key||'';try{navigator.clipboard.writeText(k).then(()=>toast('คัดลอกรหัสแล้ว ถ้า iPhone ถามรหัสให้กดวาง')).catch(()=>{});}catch(_){}});
 /* tap the time in the day plan: the phone's time picker, saved when it closes (Done) */
 document.addEventListener('focusout',e=>{
   const el=e.target;if(!el.classList?.contains('time-pick'))return;
@@ -4461,7 +4459,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-mt1114-3";
+const BUILD = "junbi-mt1117-1";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
