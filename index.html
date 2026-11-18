@@ -2675,7 +2675,7 @@ async function dayMapFill(date){
           store.updateItem(tripId, id, {data:it.data}).catch(() => {}); }   // Junbi: kept on the item, so the search runs once
       } catch(_){} }
     if(changed && still()) dayMapMount();
-    /* Junbi: no route lookups in the background (they would use the person's own Gemini quota) */
+    scheduleTravelPrefetch();   // travel times for the day's gaps (slowly, see runTravelPrefetch)
   } finally { DMF.busy = false; }
 }
 function dayMapLeg(id){
@@ -2887,11 +2887,15 @@ const travelResultsCache=(()=>{const m=new Map();try{const o=JSON.parse(localSto
 function travelCacheKey(leg){return JSON.stringify([S.me,S.trip.id,leg.date,leg.key,leg.from,leg.to,travelTimezone(leg)]);}
 /* find route options for every travel gap in the background, so tapping a gap shows choices at once; re-runs when places are added or moved */
 const travelPrefetch={timer:0,busy:false,failed:new Set()};
-/* Junbi: route options come from the person's own Gemini key, so they are not fetched in the background
-   (that would use up the free quota); options looked up once are kept on the phone and open instantly */
-function scheduleTravelPrefetch(){}
+/* Junbi: options come from the person's own Gemini key, so the background search goes slowly
+   (one question every 7 s, at most 40 a day on this phone) and stops when the free quota says wait */
+const PREFETCH_DAY_CAP=40,PREFETCH_GAP=7000;
+function prefetchUsed(){try{const o=JSON.parse(localStorage.getItem('junbi-app-travel-prefetch')||'{}');return o.d===today()?o.n||0:0;}catch(_){return 0;}}
+function prefetchCount(){try{localStorage.setItem('junbi-app-travel-prefetch',JSON.stringify({d:today(),n:prefetchUsed()+1}));}catch(_){}}
+function scheduleTravelPrefetch(){clearTimeout(travelPrefetch.timer);travelPrefetch.timer=setTimeout(runTravelPrefetch,1500);}
 async function runTravelPrefetch(){
   if(travelPrefetch.busy||!CONNECTED||!navigator.onLine||S.view!=='trip'||!S.trip||!S.items)return;
+  if(!window.JunbiBackend?.aiKey?.()||prefetchUsed()>=PREFETCH_DAY_CAP)return;
   const dates=tripDates(S.trip),here=Math.max(0,S.day||0),min=addDays(today(),-6);
   const order=[...dates.slice(here),...dates.slice(0,here)].filter(d=>d>=min);
   const tripId=S.trip.id,me=S.me;
@@ -2904,7 +2908,9 @@ async function runTravelPrefetch(){
         const key=travelCacheKey(leg);if(travelResultsCache.has(key)||travelPrefetch.failed.has(key))continue;
         if(S.sheet?.kind==='travel-leg'&&S.sheet.cacheKey===key&&(S.sheet.lookup||S.sheet.lookupBusy))continue;
         const sd=leg.saved?.data||{},q={date:leg.date,time:leg.saved?.time||travelDepartureHint(leg),timezone:sd.timezone||travelTimezone(leg),mode:sd.mode||'ขนส่งสาธารณะ'};
+        if(prefetchUsed()>=PREFETCH_DAY_CAP)return;
         try{
+          prefetchCount();
           const result=await api('travelOptions',{ai:false,tripId,...q,fromId:leg.fromId,toId:leg.toId,from:leg.from,to:leg.to});
           if(!travelResultMatches(q,result))throw {code:'travel_date_mismatch'};
           const sel=leg.saved?(result.routes||[]).findIndex(r=>travelModeFor(r)===sd.mode&&r.minutes===Number(sd.durationMinutes)):-1;
@@ -2912,8 +2918,10 @@ async function runTravelPrefetch(){
           const pick=leg.saved&&!sd.poly&&((result.routes||[])[sel]||(result.routes||[]).find(r=>travelModeFor(r)===sd.mode));
           if(pick?.poly)store.updateItem(tripId,leg.saved.id,{data:{poly:pick.poly,a:pick.a||null,b:pick.b||null}}).catch(()=>{});   // saved before routes kept their line
           const sh=S.sheet;if(sh?.kind==='travel-leg'&&sh.cacheKey===key&&!sh.lookup&&!sh.lookupBusy&&!sh.chosen){sh.lookup=result;sh.time=result.time;sh.lookupKey=travelQueryKey(sh);sh.lookupError='';render();}
-        }catch(e){travelPrefetch.failed.add(key);if(['travel_quota','offline','not_connected','auth_required','travel_maps_unavailable'].includes(e?.code))return;}
-        await new Promise(r=>setTimeout(r,600));
+        }catch(e){const c=e?.code||e?.message;
+          if(['rate_limited','rate_limited_day','missing_GEMINI_API_KEY','bad_ai_key'].includes(c))return;   // quota or key: try again another time
+          travelPrefetch.failed.add(key);if(['travel_quota','offline','not_connected','auth_required','travel_maps_unavailable'].includes(c))return;}
+        await new Promise(r=>setTimeout(r,PREFETCH_GAP));
       }
     }
   }finally{travelPrefetch.busy=false;}
@@ -4767,7 +4775,7 @@ async function logout(){
 
 /* ---------- boot ---------- */
 /* phones keep an old copy of the page; reload once when a newer one is online */
-const BUILD = "junbi-mt1118-1";
+const BUILD = "junbi-mt1118-2";
 async function checkUpdate(){
   if(location.protocol !== "https:") return;
   try {
